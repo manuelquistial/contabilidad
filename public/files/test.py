@@ -62,7 +62,7 @@ currentDirectory = pathlib.Path('.')
 # define the pattern
 currentPattern = "*.xlsx"
 
-dataFrames = {1:'',2:'',3:''}
+dataFrames = {1:'',2:'',3:'',4:'',5:''}
 
 for currentFile in currentDirectory.glob(currentPattern):
     if(str(currentFile).lower() == 'general_sigep.xlsx'):
@@ -71,10 +71,66 @@ for currentFile in currentDirectory.glob(currentPattern):
         dataFrames[2]= pd.read_excel(currentFile)
     elif(str(currentFile).lower() == 'recaudos_sap.xlsx'):
         dataFrames[3]= pd.read_excel(currentFile)
+    elif(str(currentFile).lower() == 'reservas_sap.xlsx'):
+        dataFrames[4]= pd.read_excel(currentFile)
+    elif(str(currentFile).lower() == 'reservas_sigep.xlsx'):
+        dataFrames[5]= pd.read_excel(currentFile)
 
 generalSigep = dataFrames[1]
 pagosSap = dataFrames[2]
 recaudosSap = dataFrames[3]
+reservasSap = dataFrames[4]
+reservasSigep = dataFrames[5]
+
+#ReservasSigep
+cols = reservasSigep.columns.tolist()
+cols = [cols[9]] + [cols[7]] + cols[0:7] + [cols[8]]
+reservasSigep = reservasSigep[cols]
+reservasSigepItems = {1:'',2:''}
+items =  {1:'Reserva',2:'Egreso'}
+for sigep in reservasSigepItems: 
+    values = reservasSigep['Unnamed: 2'] == items[sigep]
+    reservasSigepItems[sigep] = reservasSigep[values]
+    values = reservasSigep[values]
+    fecha = values[cols[5]].dt.strftime('%m/%d/%Y')
+    values.update(fecha)        
+    reservasSigepItems[sigep] = values
+
+#reservasSap
+colRSa = reservasSap.columns.tolist()
+colS = reservasSigepItems[1].columns.tolist()
+reservasSap = reservasSap[:-1]
+'''
+ref = reservasSap[colRSa[0]].astype('int64')
+reservasSap.update(ref)
+val = reservasSap[colRSa[5]].astype('int64')
+reservasSap.update(val)'''
+fecha = reservasSap[colRSa[3]].dt.strftime('%m/%d/%Y')
+reservasSap.update(fecha)
+fecha = reservasSap[colRSa[17]].dt.strftime('%m/%d/%Y')
+reservasSap.update(fecha)
+
+for index, row in reservasSap.iterrows():
+    value = reservasSap[colRSa[0]] == row[colRSa[0]]
+    value = reservasSap[value]
+    suma = value[colRSa[5]].sum()
+    reserva = reservasSigepItems[1][colS[0]] == row[colRSa[0]]
+    reserva = reservasSigepItems[1][reserva]
+    egreso = reservasSigepItems[2][colS[0]] == row[colRSa[0]]
+    egreso = reservasSigepItems[2][egreso]
+    sumaEgreso = egreso[colS[1]].sum()
+    positivoSap = value.apply(lambda s: s[colRSa[5]] > 0, axis=1)
+    positivoSap = value[positivoSap]
+    print(row[colRSa[0]])
+    print(suma)
+    print(sumaEgreso)
+    print(reserva.empty)
+    print(positivoSap[colRSa[5]])
+
+
+
+
+'''
 
 #generalSigep
 generalSigepItems = {1:'',2:''}
@@ -270,3 +326,4 @@ for item in dataFrames:
         
 # Close the Pandas Excel writer and output the Excel file.
 writer.save()
+'''
