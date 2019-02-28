@@ -42,7 +42,6 @@ def style(item, row, col, worksheet, cont, format):
             worksheet.write(cont, 1,  abs(row[col[1]]), format)
             worksheet.write(cont, 24, '=SUMAR.SI.CONJUNTO(Ingresos_SIGEP!B:B,Ingresos_SIGEP!A:A,Recaudos_SAP!A'+str(cont+1)+',Ingresos_SIGEP!G:G,Recaudos_SAP!G:G)', format)
             worksheet.write(cont, 25, '=SUMAR.SI.CONJUNTO(Recaudos_SAP!B:B,Recaudos_SAP!A:A,Recaudos_SAP!A'+str(cont+1)+',Recaudos_SAP!G:G,Recaudos_SAP!G:G)-Y'+str(cont+1), format)
-        
     elif(item == 2):
         worksheet.write(cont, 11, '=SUMAR.SI.CONJUNTO(Recaudos_SAP!B:B,Recaudos_SAP!A:A,Ingresos_SIGEP!A'+str(cont+1)+',Recaudos_SAP!G:G,Ingresos_SIGEP!G:G)', format)
         worksheet.write(cont, 1, row[col[1]], format)
@@ -56,6 +55,12 @@ def style(item, row, col, worksheet, cont, format):
         worksheet.write(cont, 11, '=SUMAR.SI.CONJUNTO(Pagos_SAP!B:B,Pagos_SAP!A:A,Egresos_SIGEP!A'+str(cont+1)+',Pagos_SAP!G:G,Egresos_SIGEP!G:G)', format)
         worksheet.write(cont, 1, row[col[1]], format)
         worksheet.write(cont, 12, '=SUMAR.SI.CONJUNTO(Egresos_SIGEP!B:B,Egresos_SIGEP!A:A,Egresos_SIGEP!A'+str(cont+1)+',Egresos_SIGEP!G:G,Egresos_SIGEP!G:G)-L'+str(cont+1), format)
+
+def styleRecaudos(item, row, col, worksheet, cont, format):
+    if(item == 1):
+        worksheet.write(cont, 5, row[col[5]], format)
+    elif(item == 2):
+        worksheet.write(cont, 1, row[col[1]], format)
        
 # define the path
 currentDirectory = pathlib.Path('.')
@@ -83,34 +88,43 @@ reservasSap = dataFrames[4]
 reservasSigep = dataFrames[5]
 
 #ReservasSigep
-cols = reservasSigep.columns.tolist()
-cols = [cols[9]] + [cols[7]] + cols[0:7] + [cols[8]]
-reservasSigep = reservasSigep[cols]
 reservasSigepItems = {1:'',2:''}
 items =  {1:'Reserva',2:'Egreso'}
 for sigep in reservasSigepItems: 
     values = reservasSigep['Unnamed: 2'] == items[sigep]
     reservasSigepItems[sigep] = reservasSigep[values]
     values = reservasSigep[values]
+    month = pd.DatetimeIndex(values['Unnamed: 3'])
+    values['Periodo'] = month.month
+    cols = values.columns.tolist()
+    cols = [cols[9]] + [cols[7]] + cols[0:4] + [cols[10]] + cols[4:7] + [cols[8]]
+    values = values[cols]
     fecha = values[cols[5]].dt.strftime('%m/%d/%Y')
-    values.update(fecha)        
+    values.update(fecha)    
+    values['valida'] = 0    
     reservasSigepItems[sigep] = values
+
+string = reservasSigepItems[1][cols[1]].apply(lambda s: type(s) == str)
+string = reservasSigepItems[1][string]
+string[cols[1]] = 0
+reservasSigepItems[1].update(string)
+string = reservasSigepItems[2][cols[1]].apply(lambda s: type(s) == str)
+string = reservasSigepItems[2][string]
+string[cols[1]] = 0
+reservasSigepItems[2].update(string)
 
 #reservasSap
 colRSa = reservasSap.columns.tolist()
 colS = reservasSigepItems[1].columns.tolist()
 reservasSap = reservasSap[:-1]
-'''
-ref = reservasSap[colRSa[0]].astype('int64')
-reservasSap.update(ref)
-val = reservasSap[colRSa[5]].astype('int64')
-reservasSap.update(val)'''
 fecha = reservasSap[colRSa[3]].dt.strftime('%m/%d/%Y')
 reservasSap.update(fecha)
 fecha = reservasSap[colRSa[17]].dt.strftime('%m/%d/%Y')
 reservasSap.update(fecha)
+reservasSap['valida'] = 0 
+iteration = reservasSap.groupby([colRSa[0]]).mean().reset_index()
 
-for index, row in reservasSap.iterrows():
+for index, row in iteration.iterrows():
     value = reservasSap[colRSa[0]] == row[colRSa[0]]
     value = reservasSap[value]
     suma = value[colRSa[5]].sum()
@@ -121,16 +135,13 @@ for index, row in reservasSap.iterrows():
     sumaEgreso = egreso[colS[1]].sum()
     positivoSap = value.apply(lambda s: s[colRSa[5]] > 0, axis=1)
     positivoSap = value[positivoSap]
-    print(row[colRSa[0]])
-    print(suma)
-    print(sumaEgreso)
-    print(reserva.empty)
-    print(positivoSap[colRSa[5]])
-
-
-
-
-'''
+    sumaPositivoSap = positivoSap[colRSa[5]].sum()
+    if(suma == 0) & (sumaEgreso == sumaPositivoSap) & (reserva.empty):
+        egreso['valida'] = 1
+        value['valida'] = 1
+        reservasSigepItems[1].update(reserva)
+        reservasSigepItems[2].update(egreso)
+        reservasSap.update(value)
 
 #generalSigep
 generalSigepItems = {1:'',2:''}
@@ -216,6 +227,7 @@ ssSigep = generalSigepItems[2].apply(lambda s: str(s[colR[9]]).lower()[0:2] == '
 ssSap = pagosSap[ssSap]
 ssSigep = generalSigepItems[2][ssSigep]
 
+''' TITULOS SIGEP '''
 titulosSigep=['Número de Soporte','Valor','Proyecto','Codigo','Tipo','Fecha','Periodo','Referencia','Nit/Cédula','Observación','Tipo de Soporte',' Formula','Diferencia','Observaciones','valida']
 generalSigepItems[1].columns = titulosSigep
 generalSigepItems[2].columns = titulosSigep
@@ -248,7 +260,9 @@ cell_size = 20
 bold = workbook.add_format({'bold': 1})
 bold_money = workbook.add_format({'bold': 1, 'num_format': '#,##'})
 money = workbook.add_format({'num_format': '#,##'})
+title = workbook.add_format({'bold': 1, 'fg_color': '#C6E0B4'})
 
+# SS
 cols = seguridadSap.columns.tolist()
 cols = [cols[0]] + [cols[1]] + cols[4:7] + [cols[9]] + cols[20:22]
 seguridadSap = seguridadSap[cols]
@@ -258,7 +272,7 @@ worksheet = writer.sheets['SS']
 worksheet.write(shapeSAP[0]+1, 1,  '=SUM(B2:B'+str(shapeSAP[0]+1)+')', bold_money) 
 worksheet.write(0, 0, 'SS SAP', bold)
 worksheet.set_column('A:AB', cell_size, None)
-worksheet.set_column('B:B', cell_size, money)
+worksheet.set_column('B:B', None, money)
 
 cols = seguridadSigep.columns.tolist()
 seguridadSigep = seguridadSigep[cols[0:11]]
@@ -278,7 +292,7 @@ worksheet.write(shapeSAP[0]+shapeSIGEP[0]+9, 1, '=B'+str(shapeSAP[0]+shapeSIGEP[
 for item in sheets:
     if(item % 2) != 0:
         worksheet = writer.sheets[sheets[item]]
-        worksheet.set_row(0, 30, None)
+        worksheet.set_row(0, 30, title)
         worksheet.set_column('A:AB', cell_size, None)
         worksheet.autofilter('A1:AB1')
         worksheet.set_column('C:D', None, None, {'hidden': True})
@@ -288,15 +302,32 @@ for item in sheets:
 
     elif(item % 2) == 0:
         worksheet = writer.sheets[sheets[item]]
-        worksheet.set_row(0, 30, None)
+        worksheet.set_row(0, 30, title)
         worksheet.set_column('A:N', cell_size, None)
         worksheet.autofilter('A1:N1')
 
-dataFrames = {1:'',2:'',3:'',4:''}
-dataFrames[1] = recaudos
-dataFrames[2] = ingreso
-dataFrames[3] = pagos
-dataFrames[4] = egreso
+''' RESERVAS '''
+sheetsReservas = {1:'Reservas_SAP',2:'Reservas_SIGEP'}
+#Reservas SAP
+reservasSapV = reservasSap.drop('valida', 1)
+reservasSapV.to_excel(writer, index=False, sheet_name=sheetsReservas[1])
+worksheet = writer.sheets[sheetsReservas[1]]
+worksheet.set_row(0, 30, title)
+worksheet.set_column('A:X', cell_size, None)
+worksheet.set_column('F:F', None, money)
+worksheet.autofilter('A1:X1')
+
+#Reservas SIGEP
+reservasSigep = reservasSigepItems[1]
+reservasSigep = reservasSigep.append(reservasSigepItems[2], ignore_index=True)
+reservasSigep.columns = titulosSigep[0:11] + [titulosSigep[14]]
+reservaSigepV = reservasSigep.drop('valida', 1)
+reservaSigepV.to_excel(writer, sheet_name=sheetsReservas[2], index=False)
+worksheet = writer.sheets[sheetsReservas[2]]
+worksheet.set_row(0, 30, title)
+worksheet.set_column('A:K', cell_size, None)
+worksheet.set_column('B:B', None, money)
+worksheet.autofilter('A1:K1')
 
 correct_info = workbook.add_format({'fg_color': '#C6E0B4'})
 correct_info_money = workbook.add_format({'fg_color': '#C6E0B4', 'num_format': '#,##0'})
@@ -305,12 +336,18 @@ ss_info_money  = workbook.add_format({'fg_color': '#FFFF00', 'num_format': '#,##
 wrong_info  = workbook.add_format({'fg_color': '#F8CBAD'})
 wrong_info_money  = workbook.add_format({'fg_color': '#F8CBAD', 'num_format': '#,##0'})
 
+''' ESTILO DE RECAUDOS - INGRESOS- PAGOS - EGRESOS '''
+dataFrames = {1:'',2:'',3:'',4:''}
+dataFrames[1] = recaudos
+dataFrames[2] = ingreso
+dataFrames[3] = pagos
+dataFrames[4] = egreso
+
 for item in dataFrames: 
     worksheet = writer.sheets[sheets[item]]
     col = dataFrames[item].columns.tolist() 
     cont = 1
     for index, row in dataFrames[item].iterrows():
-
         if (row['valida'] == 0) | (row['Diferencia'] == 0):
             worksheet.set_row(cont,None,correct_info)
             style(item, row, col, worksheet, cont, correct_info_money)
@@ -323,7 +360,22 @@ for item in dataFrames:
             style(item, row, col, worksheet, cont, ss_info_money)
         
         cont = cont + 1
+
+''' ESTILO DE RESERVAS SIGEP Y SAP'''
+dataFrames = {1:'',2:''}
+dataFrames[1] = reservasSap
+dataFrames[2] = reservasSigep
+for item in dataFrames: 
+    worksheet = writer.sheets[sheetsReservas[item]]
+    col = dataFrames[item].columns.tolist() 
+    for index, row in dataFrames[item].iterrows():
+        index = index + 1
+        if (row['valida'] == 0):
+            worksheet.set_row(index,None, wrong_info)
+            styleRecaudos(item, row, col, worksheet, index, wrong_info_money)
+        else:
+            worksheet.set_row(index,None,correct_info)
+            styleRecaudos(item, row, col, worksheet, index, correct_info_money)
         
 # Close the Pandas Excel writer and output the Excel file.
 writer.save()
-'''
