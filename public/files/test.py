@@ -241,11 +241,20 @@ seguridadSigep = ssSigep
 pagos = pagosSap
 recaudos = recaudosSap
 
-# Create a Pandas Excel writer using XlsxWriter as the engine. 
+positivosRecaudos = recaudos.apply(lambda s: s[cols[1]] > 0, axis=1)
+positivosRecaudos = recaudos[positivosRecaudos]
+
+pagosValidar = pagos.apply(lambda s: (s['valida'] != 0) & (str(s[cols[4]]).lower()[0:6] != 'automn'), axis=1)
+pagosValidar = pagos[pagosValidar]
+
+''' SE CREA EL ARCHIVO DE EXCEL'''
 writer = pd.ExcelWriter('Centro_de_Costos.xlsx', engine='xlsxwriter')
 
 sheets = {1:'Recaudos_SAP',2:'Ingresos_SIGEP',3:'Pagos_SAP',4:'Egresos_SIGEP'}
-# Convert the dataframe to an XlsxWriter Excel object.
+
+#Se crea conciliacion de recaudos
+pd.DataFrame().to_excel(writer, sheet_name='Conciliación', index=False)
+
 recaudosV = recaudos.drop('valida', 1)
 recaudosV.to_excel(writer, index=False, sheet_name=sheets[1])
 ingresoV = ingreso.drop('valida', 1)
@@ -261,8 +270,50 @@ bold = workbook.add_format({'bold': 1})
 bold_money = workbook.add_format({'bold': 1, 'num_format': '#,##'})
 money = workbook.add_format({'num_format': '#,##'})
 title = workbook.add_format({'bold': 1, 'fg_color': '#C6E0B4'})
+titleConciliacion = workbook.add_format({'bold': 1, 'fg_color': '#FCE4D6'})
 
-# SS
+''' Conciliacion ''' 
+worksheet = writer.sheets['Conciliación']
+worksheet.set_column('A:E', cell_size, None)
+worksheet.write(0, 0, 'CONCILIACIÓN CENTRO DE COSTOS ##', bold)
+worksheet.write(3, 0, 'Ingresos', bold)
+worksheet.write(3, 3, 'SAP', bold)
+worksheet.write(3, 4, 'SIGEP', bold)
+#worksheet.write(4, 3, '=Recaudos_SAP!'+str(1)+')', money) 
+#worksheet.write(4, 4, '=Ingresos_SIGEP!'+str(1)+')', money) 
+cols = positivosRecaudos.columns.tolist()
+shapePositivos = positivosRecaudos.shape
+cont = 5
+for index, row in positivosRecaudos.iterrows():
+    worksheet.write(cont, 0, 'Menos ingreso '+str(int(row[cols[0]]))+' (en positivo no se registra)')
+    worksheet.write(cont, 3, row[cols[1]], money)
+    cont = cont + 1
+
+worksheet.write(shapePositivos[0]+6, 0, 'Total', bold)
+worksheet.write(shapePositivos[0]+6, 3, '=D5-SUM(D6:D'+str(shapePositivos[0]+5)+')', money)
+worksheet.write(shapePositivos[0]+6, 4, '=E5', money)
+worksheet.write(shapePositivos[0]+7, 0, 'Diferencias', bold)
+worksheet.write(shapePositivos[0]+7, 4, '=D'+str(shapePositivos[0]+7)+'-E'+str(shapePositivos[0]+7), bold_money)
+
+cols = pagosValidar.columns.tolist()
+shapePagosValida = pagosValidar.shape
+worksheet.write(shapePositivos[0]+9, 0, 'Egresos', bold)
+worksheet.write(shapePositivos[0]+9, 3, 'SAP', bold)
+worksheet.write(shapePositivos[0]+9, 4, 'SIGEP', bold)
+
+cont = shapePositivos[0]+12
+for index, row in pagosValidar.iterrows():
+    worksheet.write(cont, 0, int(row[cols[0]]))
+    worksheet.write(cont, 4, row[cols[1]], money)
+    cont = cont + 1
+
+worksheet.write(shapePagosValida[0]+shapePositivos[0]+13, 0, 'Total', bold)
+worksheet.write(shapePagosValida[0]+shapePositivos[0]+13, 3, '=D'+str(shapePositivos[0]+11), money)
+worksheet.write(shapePagosValida[0]+shapePositivos[0]+13, 4, '=SUM(E'+str(shapePositivos[0]+13)+':E'+str(shapePagosValida[0]+shapePositivos[0]+12)+')', money)
+worksheet.write(shapePagosValida[0]+shapePositivos[0]+14, 0, 'Diferencias', bold)
+worksheet.write(shapePagosValida[0]+shapePositivos[0]+14, 4, '=D'+str(shapePagosValida[0]+shapePositivos[0]+14)+'-E'+str(shapePagosValida[0]+shapePositivos[0]+14), bold_money)
+
+#SS
 cols = seguridadSap.columns.tolist()
 cols = [cols[0]] + [cols[1]] + cols[4:7] + [cols[9]] + cols[20:22]
 seguridadSap = seguridadSap[cols]
