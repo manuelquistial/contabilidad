@@ -61,7 +61,22 @@ def styleRecaudos(item, row, col, worksheet, cont, format):
         worksheet.write(cont, 5, row[col[5]], format)
     elif(item == 2):
         worksheet.write(cont, 1, row[col[1]], format)
-       
+
+def totalesSheets(worksheet, shapes, format, item):
+    if(item == 2) | (item == 4):
+        worksheet.write(shapes, 1, '=SUM(B2:B'+str(shapes)+')', format)
+        worksheet.write(shapes, 11, '=SUM(L2:L'+str(shapes)+')', format)
+        worksheet.write(shapes, 12, '=SUM(M2:M'+str(shapes)+')', format)
+    elif(item == 3):
+        worksheet.write(shapes, 1, '=SUM(B2:B'+str(shapes)+')', format)
+        worksheet.write(shapes, 24, '=SUM(Y2:Y'+str(shapes)+')', format)
+        worksheet.write(shapes, 25, '=SUM(Z2:Z'+str(shapes)+')', format)
+        worksheet.write(shapes, 26, '=SUM(AA2:AA'+str(shapes)+')', format)
+    elif(item == 1):
+        worksheet.write(shapes, 1, '=SUM(B2:B'+str(shapes)+')', format)
+        worksheet.write(shapes, 24, '=SUM(Y2:Y'+str(shapes)+')', format)
+        worksheet.write(shapes, 25, '=SUM(Z2:Z'+str(shapes)+')', format)    
+
 # define the path
 currentDirectory = pathlib.Path('.')
 # define the pattern
@@ -264,12 +279,13 @@ pagosV.to_excel(writer, index=False, sheet_name=sheets[3])
 egresoV = egreso.drop('valida', 1)
 egresoV.to_excel(writer, index=False, sheet_name=sheets[4])
 
+''' ESTILOS '''
 workbook = writer.book
 cell_size = 20
 bold = workbook.add_format({'bold': 1})
 bold_money = workbook.add_format({'bold': 1, 'num_format': '#,##'})
 money = workbook.add_format({'num_format': '#,##'})
-title = workbook.add_format({'bold': 1, 'fg_color': '#C6E0B4'})
+title = workbook.add_format({'fg_color': '#C6E0B4'})
 titleConciliacion = workbook.add_format({'bold': 1, 'fg_color': '#FCE4D6'})
 
 ''' Conciliacion ''' 
@@ -279,8 +295,7 @@ worksheet.write(0, 0, 'CONCILIACIÓN CENTRO DE COSTOS ##', bold)
 worksheet.write(3, 0, 'Ingresos', bold)
 worksheet.write(3, 3, 'SAP', bold)
 worksheet.write(3, 4, 'SIGEP', bold)
-#worksheet.write(4, 3, '=Recaudos_SAP!'+str(1)+')', money) 
-#worksheet.write(4, 4, '=Ingresos_SIGEP!'+str(1)+')', money) 
+
 cols = positivosRecaudos.columns.tolist()
 shapePositivos = positivosRecaudos.shape
 cont = 5
@@ -309,11 +324,11 @@ for index, row in pagosValidar.iterrows():
 
 worksheet.write(shapePagosValida[0]+shapePositivos[0]+13, 0, 'Total', bold)
 worksheet.write(shapePagosValida[0]+shapePositivos[0]+13, 3, '=D'+str(shapePositivos[0]+11), money)
-worksheet.write(shapePagosValida[0]+shapePositivos[0]+13, 4, '=SUM(E'+str(shapePositivos[0]+13)+':E'+str(shapePagosValida[0]+shapePositivos[0]+12)+')', money)
+worksheet.write(shapePagosValida[0]+shapePositivos[0]+13, 4, '=SUM(E'+str(shapePositivos[0]+11)+':E'+str(shapePagosValida[0]+shapePositivos[0]+12)+')', money)
 worksheet.write(shapePagosValida[0]+shapePositivos[0]+14, 0, 'Diferencias', bold)
 worksheet.write(shapePagosValida[0]+shapePositivos[0]+14, 4, '=D'+str(shapePagosValida[0]+shapePositivos[0]+14)+'-E'+str(shapePagosValida[0]+shapePositivos[0]+14), bold_money)
 
-#SS
+''' HOHA DE SEGURIDAD SOCIAL SS '''
 cols = seguridadSap.columns.tolist()
 cols = [cols[0]] + [cols[1]] + cols[4:7] + [cols[9]] + cols[20:22]
 seguridadSap = seguridadSap[cols]
@@ -343,7 +358,6 @@ worksheet.write(shapeSAP[0]+shapeSIGEP[0]+9, 1, '=B'+str(shapeSAP[0]+shapeSIGEP[
 for item in sheets:
     if(item % 2) != 0:
         worksheet = writer.sheets[sheets[item]]
-        worksheet.set_row(0, 30, title)
         worksheet.set_column('A:AB', cell_size, None)
         worksheet.autofilter('A1:AB1')
         worksheet.set_column('C:D', None, None, {'hidden': True})
@@ -353,7 +367,6 @@ for item in sheets:
 
     elif(item % 2) == 0:
         worksheet = writer.sheets[sheets[item]]
-        worksheet.set_row(0, 30, title)
         worksheet.set_column('A:N', cell_size, None)
         worksheet.autofilter('A1:N1')
 
@@ -363,7 +376,6 @@ sheetsReservas = {1:'Reservas_SAP',2:'Reservas_SIGEP'}
 reservasSapV = reservasSap.drop('valida', 1)
 reservasSapV.to_excel(writer, index=False, sheet_name=sheetsReservas[1])
 worksheet = writer.sheets[sheetsReservas[1]]
-worksheet.set_row(0, 30, title)
 worksheet.set_column('A:X', cell_size, None)
 worksheet.set_column('F:F', None, money)
 worksheet.autofilter('A1:X1')
@@ -393,9 +405,13 @@ dataFrames[1] = recaudos
 dataFrames[2] = ingreso
 dataFrames[3] = pagos
 dataFrames[4] = egreso
+totales = {1:'',2:'',3:'',4:''}
 
 for item in dataFrames: 
     worksheet = writer.sheets[sheets[item]]
+    shapes = dataFrames[item].shape
+    shapes = shapes[0] + 2
+    totales[item] = shapes
     col = dataFrames[item].columns.tolist() 
     cont = 1
     for index, row in dataFrames[item].iterrows():
@@ -411,6 +427,9 @@ for item in dataFrames:
             style(item, row, col, worksheet, cont, ss_info_money)
         
         cont = cont + 1
+    totalesSheets(worksheet, shapes-1, money, item)   
+    worksheet.set_row(0, 30, title)    
+
 
 ''' ESTILO DE RESERVAS SIGEP Y SAP'''
 dataFrames = {1:'',2:''}
@@ -427,6 +446,15 @@ for item in dataFrames:
         else:
             worksheet.set_row(index,None,correct_info)
             styleRecaudos(item, row, col, worksheet, index, correct_info_money)
-        
+    worksheet.set_row(0, 30, title) 
+
+''' TOTALES EN CONCILIACION'''
+worksheet = writer.sheets['Conciliación'] 
+#Ingresos
+worksheet.write(4, 3, '=Recaudos_SAP!B'+str(totales[1]), money)
+worksheet.write(4, 4, '=Ingresos_SIGEP!B'+str(totales[2]), money)  
+worksheet.write(shapePositivos[0]+10, 3, '=Pagos_SAP!B'+str(totales[3]), money)
+worksheet.write(shapePositivos[0]+10, 4, '=Egresos_SIGEP!B'+str(totales[4]), money)
+
 # Close the Pandas Excel writer and output the Excel file.
 writer.save()
