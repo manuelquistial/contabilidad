@@ -259,6 +259,9 @@ recaudos = recaudosSap
 positivosRecaudos = recaudos.apply(lambda s: s[cols[1]] > 0, axis=1)
 positivosRecaudos = recaudos[positivosRecaudos]
 
+recaudosValidar = recaudos.apply(lambda s: (s['valida'] != 0), axis=1)
+recaudosValidar = recaudos[recaudosValidar]
+
 pagosValidar = pagos.apply(lambda s: (s['valida'] != 0) & (str(s[cols[4]]).lower()[0:6] != 'automn'), axis=1)
 pagosValidar = pagos[pagosValidar]
 
@@ -304,31 +307,39 @@ for index, row in positivosRecaudos.iterrows():
     worksheet.write(cont, 3, row[cols[1]], money)
     cont = cont + 1
 
-worksheet.write(shapePositivos[0]+6, 0, 'Total', bold)
-worksheet.write(shapePositivos[0]+6, 3, '=D5-SUM(D6:D'+str(shapePositivos[0]+5)+')', money)
-worksheet.write(shapePositivos[0]+6, 4, '=E5', money)
-worksheet.write(shapePositivos[0]+7, 0, 'Diferencias', bold)
-worksheet.write(shapePositivos[0]+7, 4, '=D'+str(shapePositivos[0]+7)+'-E'+str(shapePositivos[0]+7), bold_money)
+cols = recaudosValidar.columns.tolist()
+shapeRecaudosV = recaudosValidar.shape
+cont = shapePositivos[0] + 5 
+for index, row in recaudosValidar.iterrows():
+    worksheet.write(cont, 0, int(row[cols[0]]))
+    worksheet.write(cont, 4, row[cols[1]], money)
+    cont = cont + 1
+
+worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+6, 0, 'Total', bold)
+worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+6, 3, '=D5-SUM(D6:D'+str(shapePositivos[0]+shapeRecaudosV[0]+5)+')', money)
+worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+6, 4, '=E5', money)
+worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+7, 0, 'Diferencias', bold)
+worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+7, 4, '=D'+str(shapePositivos[0]+shapeRecaudosV[0]+7)+'-E'+str(shapePositivos[0]+shapeRecaudosV[0]+7), bold_money)
 
 cols = pagosValidar.columns.tolist()
 shapePagosValida = pagosValidar.shape
-worksheet.write(shapePositivos[0]+9, 0, 'Egresos', bold)
-worksheet.write(shapePositivos[0]+9, 3, 'SAP', bold)
-worksheet.write(shapePositivos[0]+9, 4, 'SIGEP', bold)
+worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+9, 0, 'Egresos', bold)
+worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+9, 3, 'SAP', bold)
+worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+9, 4, 'SIGEP', bold)
 
-cont = shapePositivos[0]+12
+cont = shapePositivos[0]+shapeRecaudosV[0]+12
 for index, row in pagosValidar.iterrows():
     worksheet.write(cont, 0, int(row[cols[0]]))
     worksheet.write(cont, 4, row[cols[1]], money)
     cont = cont + 1
 
-worksheet.write(shapePagosValida[0]+shapePositivos[0]+13, 0, 'Total', bold)
-worksheet.write(shapePagosValida[0]+shapePositivos[0]+13, 3, '=D'+str(shapePositivos[0]+11), money)
-worksheet.write(shapePagosValida[0]+shapePositivos[0]+13, 4, '=SUM(E'+str(shapePositivos[0]+11)+':E'+str(shapePagosValida[0]+shapePositivos[0]+12)+')', money)
-worksheet.write(shapePagosValida[0]+shapePositivos[0]+14, 0, 'Diferencias', bold)
-worksheet.write(shapePagosValida[0]+shapePositivos[0]+14, 4, '=D'+str(shapePagosValida[0]+shapePositivos[0]+14)+'-E'+str(shapePagosValida[0]+shapePositivos[0]+14), bold_money)
+worksheet.write(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+13, 0, 'Total', bold)
+worksheet.write(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+13, 3, '=D'+str(shapePositivos[0]+shapeRecaudosV[0]+11), money)
+worksheet.write(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+13, 4, '=SUM(E'+str(shapePositivos[0]+shapeRecaudosV[0]+11)+':E'+str(shapePagosValida[0]+shapeRecaudosV[0]+shapePositivos[0]+12)+')', money)
+worksheet.write(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+14, 0, 'Diferencias', bold)
+worksheet.write(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+14, 4, '=D'+str(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+14)+'-E'+str(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+14), bold_money)
 
-''' HOHA DE SEGURIDAD SOCIAL SS '''
+''' HOJA DE SEGURIDAD SOCIAL SS '''
 cols = seguridadSap.columns.tolist()
 cols = [cols[0]] + [cols[1]] + cols[4:7] + [cols[9]] + cols[20:22]
 seguridadSap = seguridadSap[cols]
@@ -430,13 +441,16 @@ for item in dataFrames:
     totalesSheets(worksheet, shapes-1, money, item)   
     worksheet.set_row(0, 30, title)    
 
-
 ''' ESTILO DE RESERVAS SIGEP Y SAP'''
 dataFrames = {1:'',2:''}
 dataFrames[1] = reservasSap
 dataFrames[2] = reservasSigep
+totalReserva = {1:'',2:''}
 for item in dataFrames: 
     worksheet = writer.sheets[sheetsReservas[item]]
+    shapes = dataFrames[item].shape
+    shapes = shapes[0] + 1
+    totalReserva[item] = shapes
     col = dataFrames[item].columns.tolist() 
     for index, row in dataFrames[item].iterrows():
         index = index + 1
@@ -448,13 +462,20 @@ for item in dataFrames:
             styleRecaudos(item, row, col, worksheet, index, correct_info_money)
     worksheet.set_row(0, 30, title) 
 
+worksheet.write(totalReserva[1], 5, '=SUM(F2:F'+str(totalReserva[1])+')', money)
+worksheet.write(totalReserva[2], 1, '=SUM(B2:B'+str(totalReserva[2])+')', money)
+
 ''' TOTALES EN CONCILIACION'''
 worksheet = writer.sheets['Conciliación'] 
 #Ingresos
+worksheet.write(4, 0, 'Notas')
 worksheet.write(4, 3, '=Recaudos_SAP!B'+str(totales[1]), money)
-worksheet.write(4, 4, '=Ingresos_SIGEP!B'+str(totales[2]), money)  
-worksheet.write(shapePositivos[0]+10, 3, '=Pagos_SAP!B'+str(totales[3]), money)
-worksheet.write(shapePositivos[0]+10, 4, '=Egresos_SIGEP!B'+str(totales[4]), money)
+worksheet.write(4, 4, '=Ingresos_SIGEP!B'+str(totales[2]), money)
+worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+10, 0, 'Notas')  
+worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+10, 3, '=Pagos_SAP!B'+str(totales[3]), money)
+worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+10, 4, '=Egresos_SIGEP!B'+str(totales[4]), money)
+worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+11, 0, 'Más SS Social Cobrada de Mas al CC')
+worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+11, 4, '=SS!B'+str(shapeSAP[0]+shapeSIGEP[0]+10), money)
 
 # Close the Pandas Excel writer and output the Excel file.
 writer.save()
