@@ -15,6 +15,12 @@ class UploadFileController extends Controller
         return view('upload_file');
     }
 
+    public function downloadReservas(){
+        $data = glob(public_path('files').'\\files_out\\*');
+        //Storing the values to $data['files'] is exactly the same, as replacing $data in the following lines with ['files' => Storage::directories($directory)]
+        return json_encode($data);
+    }
+
     /**
      * Show the application dashboard.
      *

@@ -7,15 +7,48 @@
         <title>Conciliacion - Facultad de Comunicaciones</title>
         <!-- Fonts -->
         <!-- Styles -->
+        
+    </head>
+    <body>
+        <div class="container">
+        <nav class="navbar navbar-light bg-light">
+            <a class="navbar-brand">Conciliacion - Facultad de Comunicaciones</a>
+        </nav>
+            <div class="row upload"  style="margin-top: 20px;">
+                <div class="row">
+                    <div class="col">
+                        <input type="text" class="form-control" placeholder="First name">
+                    </div>
+                    <div class="col">
+                        <input type="text" class="form-control" placeholder="Last name">
+                    </div>
+                </div>
+                <div class="row" style="width: 60%;">
+                    <div class="col">
+                        <a role="button" class="btn btn-outline-primary">Large button</a>
+                    </div>
+                    <div class="col">
+                        <a role="button" class="btn btn-outline-success" id="reservas" style="float: right;">Large button</a>
+                    </div>
+                </div>
+                <div class="upload-boxes" id="upload-boxes-file"></div>
+            </div>
+            <div class="row upload">
+                <div class="download-box text-center ">
+                <div class="card-header">
+                    Documentos Generados
+                </div>
+                <div class="card-body" id="downloads"></div>
+                </div>
+            </div>
+            
+            <input id="files" type="file" name="file" multiple hidden><br>
+        </div>
+    </body>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+
         <style>
-            body {
-                font-family: 'PT Sans', sans-serif;
-                width: 90%;
-                max-width: 1050px;
-                margin: 0 auto;
-                color: #4e4242;
-            }
-            .upload-boxes{   
+            .upload-boxes{ 
                 break-inside: avoid;
                 border-color: #c3dadc;
                 border-radius: 8px 8px 8px 8px;
@@ -26,11 +59,23 @@
                 text-align: center;
                 display: flex;
                 flex-wrap: wrap;
-                width: 60%;
+                width: 78%;
                 border-width: 2px;
+                min-height: 150px;
             }
+
             .upload-boxes:hover{
                 cursor:pointer;
+            }
+
+            .download-box{
+                border-color: #c3dadc;
+                border-radius: 8px 8px 8px 8px;
+                border-style: dashed;
+                margin: 10px;
+                page-break-inside: avoid;
+                width: 78%;
+                border-width: 2px;
             }
 
             .files-boxes{
@@ -40,31 +85,36 @@
                 page-break-inside: avoid;
                 margin: 10px;
                 padding: 1em;
-                width: 24%;
+                width: 30%;
                 text-align: center;
                 display: flex;
                 flex-direction: column;
             }
 
-            .row{
+            .upload{
                 display: flex;
                 justify-content: center;
                 align-items: center;
             }
 
+            .row{
+                margin: 5px 0 5px;
+            }
+
+            .card{
+                width: 16rem;
+                margin: 8px;
+            }
+
+            #downloads {
+                display: flex;
+            }
+
         </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="row">
-                <div class="upload-boxes" id="upload-boxes-file">
-                </div>
-            </div>
-            <input id="files" type="file" name="file" multiple hidden><br>
-        </div>
-    </body>
-    <script>
+    <script type="text/javascript">
+
         var inputFile = document.getElementById("files");
+
         document.body.addEventListener('dragover', function (evt) {
             evt.stopPropagation();
             evt.preventDefault();
@@ -105,42 +155,61 @@
                 evt.target.style.border = "";  
             }
         }, false);
+
+        document.getElementById('reservas').addEventListener('click', function (evt) {
+            let token = document.getElementsByTagName('meta')['csrf-token'].getAttribute("content"); 
+            var ajax = new XMLHttpRequest();
+            ajax.addEventListener("load", function(evt){
+                
+                JSON.parse(event.target.responseText).forEach(function (file) {
+                     _("downloads").innerHTML += '<div class="card"><div class="card-body"><h5 class="card-title">'+file.split('\\').pop()+'</h5><a role="button" class="btn btn-outline-danger">Descargar</a></div></div>'  
+                });
+            }, false);
+            ajax.open("GET", "/reservas", true);
+            ajax.setRequestHeader("X-CSRF-Token", token);
+            ajax.send();
+        }, false);
     
-        function _(el) {
-            return document.getElementById(el);
-        }
-        let index = 0
-        function uploadFile(input, token) {
-            const fileListAsArray = Array.from(input);
-            fileListAsArray.forEach(function (file) {
-                index += 1;
+        function uploadFile(input, token){
+            const fileListAsArray = Array.from(input);   
+            fileListAsArray.forEach(function (file, index) {
                 var formdata = new FormData();
                 formdata.append("file", file);
                 var ajax = new XMLHttpRequest();
-                _("upload-boxes-file").innerHTML += '<div class="files-boxes"><span>'+file.name+'</span><progress id="progressBar'+index+'" value="0" max="100" style="width: auto;"></progress><span id="status'+index+'"></span><span id="loaded_n_total'+index+'"></span></div>'
-                ajax.upload.addEventListener("progress", function(evt){progressHandler(evt, index);}, false);
-                ajax.addEventListener("load", function(evt){completeHandler(evt, index);}, false);
+                _("upload-boxes-file").innerHTML += '<div class="files-boxes"><span>'+file.name+'</span><progress id="progressBar'+index+'" value="0" max="100" style="width: auto;"></progress><span id="status'+index+'"></span></div>'
+                ajax.upload.addEventListener("progress", function(evt){
+                    console.log(file.name);
+                    progressHandler(evt, index);}, false);
+                ajax.addEventListener("load", function(evt){
+                    completeHandler(evt, index);}, false);
                 ajax.addEventListener("error", function(evt){errorHandler(evt, index);}, false);
                 ajax.addEventListener("abort", function(evt){abortHandler(evt, index);}, false);
                 ajax.open("POST", "/file-upload", true);
                 ajax.setRequestHeader("X-CSRF-Token", token);
-                //ajax.send(formdata);
+                ajax.send(formdata);
             });
             //alert(file.name+" | "+file.size+" | "+file.type);
             /*
             */
         }
-
+        function _(el) {
+            return document.getElementById(el);
+        }
+       
         function progressHandler(event, index) {
-        _("loaded_n_total"+index).innerHTML = "Uploaded " + event.loaded + " bytes of " + event.total;
-        var percent = (event.loaded / event.total) * 100;
-        _("progressBar"+index).value = Math.round(percent);
-        _("status"+index).innerHTML = Math.round(percent) + "% uploaded... please wait";
+            //<span id="loaded_n_total'+index+'"></span>
+            //_("loaded_n_total"+index).innerHTML = "Uploaded " + event.loaded + " bytes of " + event.total;
+            var percent = (event.loaded / event.total) * 100;
+            _("progressBar"+index).value = Math.round(percent);
+            _("status"+index).innerHTML = Math.round(percent) + "% uploaded... please wait";
         }
 
         function completeHandler(event, index) {
-        _("status"+index).innerHTML = JSON.parse(event.target.responseText).success;
-        _("progressBar"+index).value = 0; //wil clear progress bar after successful upload
+            _("status"+index).innerHTML = JSON.parse(event.target.responseText).success;
+            _("progressBar"+index).value = 0; //wil clear progress bar after successful upload
+            //_("loaded_n_total"+index).removeAttribute("id");
+            _("status"+index).removeAttribute("id");
+            _("progressBar"+index).removeAttribute("id");
         }
 
         function errorHandler(event, index) {
