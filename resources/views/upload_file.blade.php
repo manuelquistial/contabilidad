@@ -15,20 +15,17 @@
             <a class="navbar-brand">Conciliacion - Facultad de Comunicaciones</a>
         </nav>
             <div class="row upload"  style="margin-top: 20px;">
-                <div class="row">
-                    <div class="col">
-                        <input type="text" class="form-control" placeholder="First name">
-                    </div>
-                    <div class="col">
-                        <input type="text" class="form-control" placeholder="Last name">
+                <div class="row" style="width: 100%; justify-content: center;">
+                    <div>
+                        <input type="text" class="form-control" placeholder="Centro de Costo SAP">
                     </div>
                 </div>
                 <div class="row" style="width: 60%;">
                     <div class="col">
-                        <a role="button" class="btn btn-outline-primary">Large button</a>
+                        <a role="button" class="btn btn-outline-primary">Conciliacion</a>
                     </div>
                     <div class="col">
-                        <a role="button" class="btn btn-outline-success" id="reservas" style="float: right;">Large button</a>
+                        <a role="button" class="btn btn-outline-success" id="reservas" style="float: right;">Reservas</a>
                     </div>
                 </div>
                 <div class="upload-boxes" id="upload-boxes-file"></div>
@@ -45,11 +42,10 @@
             <input id="files" type="file" name="file" multiple hidden><br>
         </div>
     </body>
+        <div>Icons made by <a href="https://www.flaticon.com/authors/smashicons" title="Smashicons">Smashicons</a> from <a href="https://www.flaticon.com/" 			    title="Flaticon">www.flaticon.com</a> is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" 			    title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a></div>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
-
         <style>
             .upload-boxes{ 
-                break-inside: avoid;
                 border-color: #c3dadc;
                 border-radius: 8px 8px 8px 8px;
                 border-style: dashed;
@@ -65,7 +61,8 @@
             }
 
             .upload-boxes:hover{
-                cursor:pointer;
+                cursor: pointer;
+                border: 2px dashed green;
             }
 
             .download-box{
