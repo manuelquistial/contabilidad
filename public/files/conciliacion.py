@@ -1,7 +1,6 @@
 #!/usr/local/bin/python
 # -*- coding: utf-8 -*-
 import pandas as pd
-#import pathlib
 import numpy as np
 import sys
 
@@ -74,16 +73,11 @@ def totalesSheets(worksheet, shapes, format, item):
         worksheet.write(shapes, 24, '=SUM(Y2:Y'+str(shapes)+')', format)
         worksheet.write(shapes, 25, '=SUM(Z2:Z'+str(shapes)+')', format)
 
-# define the path
-#currentDirectory = pathlib.Path(sys.argv[2])
-# define the pattern
 currentPattern = [sys.argv[2],sys.argv[3],sys.argv[4]]
 dir = sys.argv[5]+"/conciliacion/"
-#print(currentDirectory)
 dataFrames = {1:'',2:'',3:''}
 
 for item in currentPattern:
-    #for currentFile in currentDirectory.glob(item):
     currentFile = item.split('/').pop()
     if(str(currentFile).lower() == 'general_sigep.xlsx'):
         dataFrames[1]= pd.read_excel(dir+currentFile)

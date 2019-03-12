@@ -16,9 +16,25 @@ class UploadFileController extends Controller
         return view('upload_file');
     }
 
-    public function downloadReservas(){
+    /**
+     * Show the application dashboard.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function downloadReservas(Request $request){
+      $request->validate([
+          'num' => 'required',
+      ]);
+
+      $value = request()->num;
+      $files = glob(public_path('files/reservas')."/*.{xlsx,XLSX}", GLOB_BRACE);
+      $param = exec("python3 ".public_path()."/files/reservas.py ".$value." ".$files[0]." ".$files[1]." ".public_path('files/'));
+      if($param){
         $data = glob(public_path('files').'/files_out/*');
         return json_encode($data);
+      }else{
+        return response()->json(['success'=>'Error en la descarga, comuniquese con soporte']);
+      }
     }
 
     /**
@@ -31,7 +47,6 @@ class UploadFileController extends Controller
         $request->validate([
             'num' => 'required',
         ]);
-
         $value = request()->num;
         $files = glob(public_path('files/conciliacion')."/*.{xlsx,XLSX}", GLOB_BRACE);
         //echo $files;

@@ -153,33 +153,36 @@
         }, false);
 
         document.getElementById('reservas').addEventListener('click', function (evt) {
+            _("downloads").innerHTML = "";
             let token = document.getElementsByTagName('meta')['csrf-token'].getAttribute("content");
             var num = document.getElementById("numero_centro").value;
-            var ajax = new XMLHttpRequest();
-            ajax.addEventListener("load", function(evt){
-              try{
-                JSON.parse(evt.target.responseText).forEach(function (file) {
-                     _("downloads").innerHTML += '<div class="card"><div class="card-body"><h5 class="card-title">'+file.split('/').pop()+'</h5><a role="button" class="btn btn-outline-danger">Descargar</a></div></div>'
-                });
-              }catch(e){
-                _("downloads").innerHTML = JSON.parse(evt.target.responseText).sucess;
-              }
-            }, false);
-            ajax.open("GET", "/reservas", true);
-            ajax.setRequestHeader("X-CSRF-Token", token);
-            ajax.send();
+            if(num != ""){
+              let param = "num="+num;
+              var ajax = new XMLHttpRequest();
+              ajax.addEventListener("load", function(event){
+                try{
+                  JSON.parse(event.target.responseText).forEach(function (file) {
+                       _("downloads").innerHTML += '<div class="card"><div class="card-body"><h5 class="card-title">'+file.split('/').pop()+'</h5><a role="button" class="btn btn-outline-danger">Descargar</a></div></div>'
+                  });
+                }catch(e){
+                  _("downloads").innerHTML = JSON.parse(event.target.responseText).sucess;
+                }
+              }, false);
+              ajax.open("GET", "/reservas?"+param, true);
+              ajax.setRequestHeader("X-CSRF-Token", token);
+              ajax.send();
+            }else{
+
+            }
         }, false);
 
         document.getElementById('conciliacion').addEventListener('click', function (evt) {
             _("downloads").innerHTML = "";
-
             let token = document.getElementsByTagName('meta')['csrf-token'].getAttribute("content");
             var num = document.getElementById("numero_centro").value;
             let param = "num="+num;
             var ajax = new XMLHttpRequest();
-
             ajax.addEventListener("load", function(event){
-              console.log(event.target.responseText)
               try{
                 JSON.parse(event.target.responseText).forEach(function (file) {
                      _("downloads").innerHTML += '<div class="card"><div class="card-body"><h5 class="card-title">'+file.split('/').pop()+'</h5><a role="button" class="btn btn-outline-danger">Descargar</a></div></div>'
