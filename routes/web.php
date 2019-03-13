@@ -15,3 +15,4 @@ Route::get('/', 'UploadFileController@index');
 Route::post('/file-upload', 'UploadFileController@fileUploadPost');
 Route::get('/conciliacion', 'UploadFileController@downloadConciliacion');
 Route::get('/reservas', 'UploadFileController@downloadReservas');
+Route::get('/download', 'UploadFileController@download');

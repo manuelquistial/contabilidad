@@ -49,7 +49,6 @@ class UploadFileController extends Controller
         ]);
         $value = request()->num;
         $files = glob(public_path('files/conciliacion')."/*.{xlsx,XLSX}", GLOB_BRACE);
-        //echo $files;
         $param = exec("python3 ".public_path()."/files/conciliacion.py ".$value." ".$files[0]." ".$files[1]." ".$files[2]." ".public_path('files/'));
         if($param){
           $data = glob(public_path('files').'/files_out/*');
@@ -57,6 +56,21 @@ class UploadFileController extends Controller
         }else{
           return response()->json(['success'=>'Error en la descarga, comuniquese con soporte']);
         }
+    }
+
+    /**
+     * Show the application dashboard.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function download(Request $request)
+    {
+        $request->validate([
+            'name' => 'required',
+        ]);
+        $name = request()->name;
+        $file = public_path('files/files_out/').$name;
+        return response()->download($file, $name);
     }
 
     /**

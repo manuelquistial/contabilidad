@@ -69,6 +69,35 @@
                     display: flex;
                 }
 
+                .spinner {
+                  width: 40px;
+                  height: 40px;
+                  background-color: #333;
+
+                  margin: 30px auto;
+                  -webkit-animation: sk-rotateplane 1.2s infinite ease-in-out;
+                  animation: sk-rotateplane 1.2s infinite ease-in-out;
+                }
+
+                @-webkit-keyframes sk-rotateplane {
+                  0% { -webkit-transform: perspective(120px) }
+                  50% { -webkit-transform: perspective(120px) rotateY(180deg) }
+                  100% { -webkit-transform: perspective(120px) rotateY(180deg)  rotateX(180deg) }
+                }
+
+                @keyframes sk-rotateplane {
+                  0% {
+                    transform: perspective(120px) rotateX(0deg) rotateY(0deg);
+                    -webkit-transform: perspective(120px) rotateX(0deg) rotateY(0deg)
+                  } 50% {
+                    transform: perspective(120px) rotateX(-180.1deg) rotateY(0deg);
+                    -webkit-transform: perspective(120px) rotateX(-180.1deg) rotateY(0deg)
+                  } 100% {
+                    transform: perspective(120px) rotateX(-180deg) rotateY(-179.9deg);
+                    -webkit-transform: perspective(120px) rotateX(-180deg) rotateY(-179.9deg);
+                  }
+                }
+
             </style>
 
     </head>
@@ -105,7 +134,6 @@
             <input id="files" type="file" name="file" multiple hidden><br>
         </div>
     </body>
-        <div>Icons made by <a href="https://www.flaticon.com/authors/smashicons" title="Smashicons">Smashicons</a> from <a href="https://www.flaticon.com/" 			    title="Flaticon">www.flaticon.com</a> is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" 			    title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a></div>
 
     <script type="text/javascript">
 
@@ -153,48 +181,72 @@
         }, false);
 
         document.getElementById('reservas').addEventListener('click', function (evt) {
-            _("downloads").innerHTML = "";
             let token = document.getElementsByTagName('meta')['csrf-token'].getAttribute("content");
             var num = document.getElementById("numero_centro").value;
             if(num != ""){
               let param = "num="+num;
               var ajax = new XMLHttpRequest();
+              ajax.addEventListener("loadstart", function(event){
+                _("downloads").innerHTML = '<div class="spinner"></div>';
+              }, false);
               ajax.addEventListener("load", function(event){
+                _("downloads").innerHTML = "";
                 try{
                   JSON.parse(event.target.responseText).forEach(function (file) {
-                       _("downloads").innerHTML += '<div class="card"><div class="card-body"><h5 class="card-title">'+file.split('/').pop()+'</h5><a role="button" class="btn btn-outline-danger">Descargar</a></div></div>'
+                       _("downloads").innerHTML += '<div class="card"><div class="card-body"><h5 class="card-title">'+file.split('/').pop()+'</h5><a href="download?name='+file.split('/').pop()+'" role="button" class="btn btn-outline-danger">Descargar</a></div></div>'
                   });
                 }catch(e){
                   _("downloads").innerHTML = JSON.parse(event.target.responseText).sucess;
                 }
+
               }, false);
               ajax.open("GET", "/reservas?"+param, true);
               ajax.setRequestHeader("X-CSRF-Token", token);
               ajax.send();
-            }else{
-
             }
         }, false);
 
         document.getElementById('conciliacion').addEventListener('click', function (evt) {
-            _("downloads").innerHTML = "";
-            let token = document.getElementsByTagName('meta')['csrf-token'].getAttribute("content");
-            var num = document.getElementById("numero_centro").value;
+          let token = document.getElementsByTagName('meta')['csrf-token'].getAttribute("content");
+          var num = document.getElementById("numero_centro").value;
+          if(num != ""){
             let param = "num="+num;
             var ajax = new XMLHttpRequest();
+            ajax.addEventListener("loadstart", function(event){
+              _("downloads").innerHTML = '<div class="spinner"></div>';
+            }, false);
             ajax.addEventListener("load", function(event){
+              _("downloads").innerHTML = "";
               try{
                 JSON.parse(event.target.responseText).forEach(function (file) {
-                     _("downloads").innerHTML += '<div class="card"><div class="card-body"><h5 class="card-title">'+file.split('/').pop()+'</h5><a role="button" class="btn btn-outline-danger">Descargar</a></div></div>'
+                     _("downloads").innerHTML += '<div class="card"><div class="card-body"><h5 class="card-title">'+file.split('/').pop()+'</h5><a href="download?name='+file.split('/').pop()+'" role="button" class="btn btn-outline-danger">Descargar</a></div></div>'
                 });
               }catch(e){
-                _("downloads").innerHTML = JSON.parse(event.target.responseText).success;
+                _("downloads").innerHTML = JSON.parse(event.target.responseText).sucess;
               }
+
             }, false);
             ajax.open("GET", "/conciliacion?"+param, true);
             ajax.setRequestHeader("X-CSRF-Token", token);
             ajax.send();
+          }
         }, false);
+
+        /*document.addEventListener('click', function (evt) {
+          if(evt.target.className.toString().includes("download")){
+            let token = document.getElementsByTagName('meta')['csrf-token'].getAttribute("content");
+            var name = "name="+evt.target.getAttribute("name");
+            console.log(name)
+            var ajax = new XMLHttpRequest();
+            ajax.addEventListener("load", function(event){
+              console.log(event.target.responseText)
+
+            }, false);
+            ajax.open("GET", "/download?"+name, true);
+            ajax.setRequestHeader("X-CSRF-Token", token);
+            ajax.send();
+          }
+        }, false);*/
 
         function uploadFile(input, token){
             const fileListAsArray = Array.from(input);
