@@ -191,10 +191,10 @@ recaudos = recaudosSap
 positivosRecaudos = recaudos.apply(lambda s: s[cols[1]] > 0, axis=1)
 positivosRecaudos = recaudos[positivosRecaudos]
 
-recaudosValidar = recaudos.apply(lambda s: (s['valida'] != 0), axis=1)
+recaudosValidar = recaudos.apply(lambda s: (s['valida'] != 0) & (s[cols[1]] <= 0), axis=1)
 recaudosValidar = recaudos[recaudosValidar]
 
-pagosValidar = pagos.apply(lambda s: (s['valida'] != 0) & (str(s[cols[4]]).lower()[0:6] != 'automn'), axis=1)
+pagosValidar = pagos.apply(lambda s: (s['valida'] != 0) & (s['Diferencia'] != 0) & (str(s[cols[4]]).lower()[0:6] != 'automn'), axis=1)
 pagosValidar = pagos[pagosValidar]
 
 ''' SE CREA EL ARCHIVO DE EXCEL'''

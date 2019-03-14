@@ -25,6 +25,7 @@
                 .upload-boxes:hover{
                     cursor: pointer;
                     border: 2px dashed green;
+                    background-color: #e9f3ff;
                 }
 
                 .download-box{
@@ -65,10 +66,6 @@
                     margin: 8px;
                 }
 
-                #downloads {
-                    display: flex;
-                }
-
                 .spinner {
                   width: 40px;
                   height: 40px;
@@ -97,7 +94,6 @@
                     -webkit-transform: perspective(120px) rotateX(-180deg) rotateY(-179.9deg);
                   }
                 }
-
             </style>
 
     </head>
@@ -124,10 +120,11 @@
             </div>
             <div class="row upload">
                 <div class="download-box text-center ">
-                <div class="card-header">
-                    Documentos Generados
-                </div>
-                <div class="card-body" id="downloads"></div>
+                  <div class="card-header">
+                      Documentos Generados
+                  </div>
+                  <div class="card-body" id="downloads">
+                  </div>
                 </div>
             </div>
 
@@ -181,35 +178,18 @@
         }, false);
 
         document.getElementById('reservas').addEventListener('click', function (evt) {
-            let token = document.getElementsByTagName('meta')['csrf-token'].getAttribute("content");
-            var num = document.getElementById("numero_centro").value;
-            if(num != ""){
-              let param = "num="+num;
-              var ajax = new XMLHttpRequest();
-              ajax.addEventListener("loadstart", function(event){
-                _("downloads").innerHTML = '<div class="spinner"></div>';
-              }, false);
-              ajax.addEventListener("load", function(event){
-                _("downloads").innerHTML = "";
-                try{
-                  JSON.parse(event.target.responseText).forEach(function (file) {
-                       _("downloads").innerHTML += '<div class="card"><div class="card-body"><h5 class="card-title">'+file.split('/').pop()+'</h5><a href="download?name='+file.split('/').pop()+'" role="button" class="btn btn-outline-danger">Descargar</a></div></div>'
-                  });
-                }catch(e){
-                  _("downloads").innerHTML = JSON.parse(event.target.responseText).sucess;
-                }
-
-              }, false);
-              ajax.open("GET", "/reservas?"+param, true);
-              ajax.setRequestHeader("X-CSRF-Token", token);
-              ajax.send();
-            }
+            dataUpload(document.getElementById("reservas").id);
         }, false);
 
         document.getElementById('conciliacion').addEventListener('click', function (evt) {
+            dataUpload(document.getElementById("conciliacion").id);
+        }, false);
+
+        function dataUpload(url){
           let token = document.getElementsByTagName('meta')['csrf-token'].getAttribute("content");
           var num = document.getElementById("numero_centro").value;
           if(num != ""){
+            _("downloads").style.display = "flex";
             let param = "num="+num;
             var ajax = new XMLHttpRequest();
             ajax.addEventListener("loadstart", function(event){
@@ -222,16 +202,31 @@
                      _("downloads").innerHTML += '<div class="card"><div class="card-body"><h5 class="card-title">'+file.split('/').pop()+'</h5><a href="download?name='+file.split('/').pop()+'" role="button" class="btn btn-outline-danger">Descargar</a></div></div>'
                 });
               }catch(e){
-                _("downloads").innerHTML = JSON.parse(event.target.responseText).sucess;
+                _("downloads").style.display = "inline-flex";
+                _("downloads").innerHTML = '<p id="downloads_text"></p>';
+                if(JSON.parse(event.target.responseText).error == undefined){
+                  _("downloads_text").innerHTML += JSON.parse(event.target.responseText).empty;
+                  _("downloads_text").innerHTML += ", documentos encontrados:"
+                  var value = JSON.parse(JSON.parse(event.target.responseText).files);
+                  value.forEach(function (file) {
+                       _("downloads_text").innerHTML += '<br>'+file.split('/').pop();
+                  });
+                }else{
+                  _("downloads_text").innerHTML = JSON.parse(event.target.responseText).error;
+                }
               }
-
             }, false);
-            ajax.open("GET", "/conciliacion?"+param, true);
+            ajax.open("GET", "/"+url+"?"+param, true);
             ajax.setRequestHeader("X-CSRF-Token", token);
             ajax.send();
+          }else{
+            document.getElementById("numero_centro").style.backgroundColor = '#fb505f4d';
           }
-        }, false);
+        }
 
+        document.getElementById('numero_centro').addEventListener('input', function (evt) {
+          document.getElementById("numero_centro").style.backgroundColor = '#fff';
+        }, false);
         /*document.addEventListener('click', function (evt) {
           if(evt.target.className.toString().includes("download")){
             let token = document.getElementsByTagName('meta')['csrf-token'].getAttribute("content");
@@ -282,7 +277,13 @@
         }
 
         function completeHandler(event, index) {
-            _("status"+index).innerHTML = JSON.parse(event.target.responseText).success;
+            if(JSON.parse(event.target.responseText).success == undefined){
+              _("status"+index).innerHTML = JSON.parse(event.target.responseText).error;
+              _("status"+index).style.color = "#fb505f";
+            }else{
+              _("status"+index).innerHTML = JSON.parse(event.target.responseText).success;
+              _("status"+index).style.color = "#4998db";
+            }
             _("progressBar"+index).value = 0; //wil clear progress bar after successful upload
             //_("loaded_n_total"+index).removeAttribute("id");
             _("status"+index).removeAttribute("id");
