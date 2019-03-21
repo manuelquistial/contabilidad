@@ -12,13 +12,21 @@ def styleReservas(item, row, col, worksheet, cont, format):
 
 currentPattern = [sys.argv[2],sys.argv[3]]
 dir = sys.argv[4]+"/reservas/"
+
 dataFrames = {1:'',2:''}
 
+
+
 for item in currentPattern:
+
     currentFile = item.split('/').pop()
+
     if(str(currentFile).lower() == 'reservas_sap.xlsx'):
+
         dataFrames[1]= pd.read_excel(dir+currentFile)
+
     elif(str(currentFile).lower() == 'reservas_sigep.xlsx'):
+
         dataFrames[2]= pd.read_excel(dir+currentFile)
 
 reservasSap = dataFrames[1]
@@ -32,23 +40,21 @@ for sigep in reservasSigepItems:
     reservasSigepItems[sigep] = reservasSigep[values]
     values = reservasSigep[values]
     month = pd.DatetimeIndex(values['Unnamed: 3'])
-    values['Periodo'] = month.month
+    values.loc[values.index.tolist(),'Periodo'] = month.month
     cols = values.columns.tolist()
     cols = [cols[9]] + [cols[7]] + cols[0:4] + [cols[10]] + cols[4:7] + [cols[8]]
     values = values[cols]
     fecha = values[cols[5]].dt.strftime('%m/%d/%Y')
     values.update(fecha)
-    values['valida'] = 0
+    values.loc[values.index.tolist(),'valida'] = 0
     reservasSigepItems[sigep] = values
 
 string = reservasSigepItems[1][cols[1]].apply(lambda s: type(s) == str)
 string = reservasSigepItems[1][string]
-string[cols[1]] = 0
-reservasSigepItems[1].update(string)
+reservasSigepItems[1].loc[string.index.tolist(),cols[1]] = 0
 string = reservasSigepItems[2][cols[1]].apply(lambda s: type(s) == str)
 string = reservasSigepItems[2][string]
-string[cols[1]] = 0
-reservasSigepItems[2].update(string)
+reservasSigepItems[2].loc[string.index.tolist(),cols[1]] = 0
 
 #reservasSap
 colRSa = reservasSap.columns.tolist()
@@ -58,31 +64,43 @@ fecha = reservasSap[colRSa[3]].dt.strftime('%m/%d/%Y')
 reservasSap.update(fecha)
 fecha = reservasSap[colRSa[17]].dt.strftime('%m/%d/%Y')
 reservasSap.update(fecha)
-reservasSap['valida'] = 0
+reservasSap.loc[reservasSap.index.tolist(),'valida'] = 0
 iteration = reservasSap.groupby([colRSa[0]]).mean().reset_index()
+reservasSapResumen = reservasSap[[colRSa[0]] + [colRSa[5]]]
 
-for index, row in iteration.iterrows():
-    value = reservasSap[colRSa[0]] == row[colRSa[0]]
-    value = reservasSap[value]
-    suma = value[colRSa[5]].sum()
-    reserva = reservasSigepItems[1][colS[0]] == row[colRSa[0]]
-    reserva = reservasSigepItems[1][reserva]
-    egreso = reservasSigepItems[2][colS[0]] == row[colRSa[0]]
-    egreso = reservasSigepItems[2][egreso]
-    sumaEgreso = egreso[colS[1]].sum()
-    positivoSap = value.apply(lambda s: s[colRSa[5]] > 0, axis=1)
-    positivoSap = value[positivoSap]
-    sumaPositivoSap = positivoSap[colRSa[5]].sum()
-    if(suma == 0) & (sumaEgreso == sumaPositivoSap) & (reserva.empty):
-        egreso['valida'] = 1
-        value['valida'] = 1
-        reservasSigepItems[1].update(reserva)
-        reservasSigepItems[2].update(egreso)
-        reservasSap.update(value)
+sumReservaSap = reservasSapResumen.groupby([colRSa[0]]).sum()
+sumReservaSap = sumReservaSap.reset_index()
+ceroSumReservaSap = sumReservaSap.loc[sumReservaSap[colRSa[5]] == 0]
+
+egreso = reservasSigepItems[2][[colS[0]]+ [colS[1]]]
+egresoResumen = egreso.groupby([colS[0]]).sum()
+egresoResumen = egresoResumen.reset_index()
+
+positivoSap = reservasSapResumen.loc[reservasSapResumen[colRSa[5]] > 0]
+positivoSapResumen = positivoSap.groupby([colRSa[0]]).sum()
+positivoSapResumen = positivoSapResumen.reset_index()
+
+filasCorrectas = pd.DataFrame()
+for index, row in ceroSumReservaSap.iterrows():
+    reserva = reservasSigepItems[1].loc[reservasSigepItems[1][colS[0]] == row[colRSa[0]]]
+    sumaEgreso = egresoResumen[colS[0]] == row[colRSa[0]]
+    sumaEgreso = egresoResumen[sumaEgreso]
+    sumaEgreso = sumaEgreso[colS[1]].sum()
+    sumaPositivoSap = positivoSapResumen[colRSa[0]] == row[colRSa[0]]
+    sumaPositivoSap = positivoSapResumen[sumaPositivoSap]
+    sumaPositivoSap = sumaPositivoSap[colRSa[5]].sum()
+    if(sumaEgreso  == sumaPositivoSap) & (reserva.empty):
+        filasCorrectas = filasCorrectas.append(ceroSumReservaSap.loc[index])
+
+for index, row in filasCorrectas.iterrows():
+    egreso = reservasSigepItems[2].loc[reservasSigepItems[2][colS[0]] == row[colRSa[0]]]
+    value = reservasSap.loc[reservasSap[colRSa[0]] == row[colRSa[0]]]
+    reservasSigepItems[2].loc[egreso.index.tolist(),'valida'] = 1
+    reservasSap.loc[value.index.tolist(),'valida'] = 1
 
 ''' SE CREA EL ARCHIVO DE EXCEL'''
-writer = pd.ExcelWriter(sys.argv[4]+'files_out/Reservas_'+str(sys.argv[1])+'.xlsx', engine='xlsxwriter')
 
+writer = pd.ExcelWriter(sys.argv[4]+'files_out/Reservas_'+str(sys.argv[1])+'.xlsx', engine='xlsxwriter')
 
 ''' ESTILOS '''
 workbook = writer.book
@@ -146,4 +164,3 @@ worksheet.write(totalReserva[2], 1, '=SUM(B2:B'+str(totalReserva[2])+')', money)
 
 # Close the Pandas Excel writer and output the Excel file.
 writer.save()
-print(True)
