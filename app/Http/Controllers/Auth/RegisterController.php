@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\User;
 use App\Http\Controllers\Controller;
+use App\User;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Foundation\Auth\RegistersUsers;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Foundation\Auth\RegistersUsers;
 
 class RegisterController extends Controller
 {
@@ -35,9 +37,8 @@ class RegisterController extends Controller
      *
      * @return void
      */
-    public function __construct()
-    {
-        $this->middleware('guest');
+    public function __construct(){
+        $this->middleware('auth');
     }
 
     /**
@@ -72,8 +73,6 @@ class RegisterController extends Controller
             'token' => str_random(40) . time(),
         ]);
 
-        $user->notify(new UserActivate($user));
-
         return $user;
     }
 
@@ -90,24 +89,6 @@ class RegisterController extends Controller
         event(new Registered($user = $this->create($request->all())));
 
         return redirect()->route('login')
-            ->with(['success' => 'Congratulations! your account is registered, you will shortly receive an email to activate your account.']);
-    }
-
-    /**
-     * @param $token
-     */
-    public function activate($token = null)
-    {
-        $user = User::where('token', $token)->first();
-
-        if (empty($user)) {
-            return redirect()->to('/')
-                ->with(['error' => 'Your activation code is either expired or invalid.']);
-        }
-
-        $user->update(['token' => null, 'active' => User::ACTIVE]);
-
-        return redirect()->route('login')
-            ->with(['success' => 'Congratulations! your account is now activated.']);
+            ->with(['success' => 'Congratulations! your account is registered.']);
     }
 }

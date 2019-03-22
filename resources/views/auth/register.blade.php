@@ -1,5 +1,11 @@
 @extends('layouts.app')
 
+@section('register')
+<a class="dropdown-item" href="{{ route('home') }}">
+    {{ __('Conciliar') }}
+</a>
+@endsection
+
 @section('content')
 <div class="container">
     <div class="row justify-content-center">
@@ -76,7 +82,7 @@
                         <div class="form-group row mb-0">
                             <div class="col-md-6 offset-md-4">
                                 <button type="submit" class="btn btn-primary">
-                                    {{ __('Register') }}
+                                    {{ __('Registrar') }}
                                 </button>
                             </div>
                         </div>

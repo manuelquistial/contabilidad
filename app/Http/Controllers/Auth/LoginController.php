@@ -1,9 +1,10 @@
 <?php
 
 namespace App\Http\Controllers\Auth;
-
 use App\Http\Controllers\Controller;
+use App\User;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
+use Illuminate\Http\Request;
 
 class LoginController extends Controller
 {
@@ -37,6 +38,10 @@ class LoginController extends Controller
         $this->middleware('guest')->except('logout');
     }
 
+    public function username(){
+        return 'username';
+    }
+
     /**
      * Get the needed authorization credentials from the request.
      *
@@ -45,26 +50,10 @@ class LoginController extends Controller
      */
     protected function credentials(Request $request)
     {
-        $field = $this->field($request);
-
         return [
-            $field => $request->get($this->username()),
-            'password' => $request->get('password'),
-            'active' => User::ACTIVE,
+            $this->username() => $request->get($this->username()),
+            'password' => $request->get('password')
         ];
-    }
-
-    /**
-     * Determine if the request field is email or username.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return string
-     */
-    public function field(Request $request)
-    {
-        $email = $this->username();
-
-        return filter_var($request->get($email), FILTER_VALIDATE_EMAIL) ? $email : 'username';
     }
 
     /**
@@ -74,14 +63,10 @@ class LoginController extends Controller
      * @return void
      */
     protected function validateLogin(Request $request)
-    {
-        $field = $this->field($request);
-
-        $messages = ["{$this->username()}.exists" => 'The account you are trying to login is not activated or it has been disabled.'];
-
+    {       
         $this->validate($request, [
-            $this->username() => "required|exists:users,{$field},active," . User::ACTIVE,
+            $this->username() => "required|exists:users,{$this->username()}",
             'password' => 'required',
-        ], $messages);
+        ]);
     }
 }
