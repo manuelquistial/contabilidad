@@ -79,11 +79,11 @@ dataFrames = {1:'',2:'',3:''}
 
 for item in currentPattern:
     currentFile = item.split('/').pop()
-    if(str(currentFile).lower() == 'general_sigep.xlsx'):
+    if(str(currentFile) == 'general_sigep_'+sys.argv[6]+'.xlsx'):
         dataFrames[1]= pd.read_excel(dir+currentFile)
-    elif(str(currentFile).lower() == 'pagos_sap.xlsx'):
+    elif(str(currentFile) == 'pagos_sap_'+sys.argv[6]+'.xlsx'):
         dataFrames[2]= pd.read_excel(dir+currentFile)
-    elif(str(currentFile).lower() == 'recaudos_sap.xlsx'):
+    elif(str(currentFile) == 'recaudos_sap_'+sys.argv[6]+'.xlsx'):
         dataFrames[3]= pd.read_excel(dir+currentFile)
 
 generalSigep = dataFrames[1]

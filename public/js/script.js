@@ -60,6 +60,8 @@ function dataUpload(url){
         _("downloads").innerHTML = '<div class="spinner"></div>';
     }, false);
     ajax.addEventListener("load", function(event){
+        
+    console.log(event.target.responseText);
         _("downloads").innerHTML = "";
         try{
         JSON.parse(event.target.responseText).forEach(function (file) {
