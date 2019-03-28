@@ -7,6 +7,7 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
+    use Notifiable;
     /**
      * The attributes that are mass assignable.
      *
@@ -27,5 +28,10 @@ class User extends Authenticatable
 
     public function roles(){
       return $this->belongsToMany(Role::class);
+    }
+
+    public function sendPasswordResetNotification($token)
+    {
+    $this->notify(new Notifications\ResetPassword($token));
     }
 }

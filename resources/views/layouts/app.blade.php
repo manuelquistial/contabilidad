@@ -7,7 +7,7 @@
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>Conciliacion - Facultad de Comunicaciones</title>
+    <title>{{ config('app.name') }}</title>
 
     <!-- Scripts -->
     <script src="{{ asset('js/app.js') }}" defer></script>
@@ -18,6 +18,7 @@
 
     <!-- Styles -->
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/style.css') }}" rel="stylesheet">
     @yield('style')
 </head>
 <body>
@@ -64,7 +65,9 @@
                 </div>
             </div>
         </nav>
-        @yield('content')
+        <div class="container" style="margin-top: 20px;">
+            @yield('content')
+        </div>
     </div>
     @yield('script')
 </body>

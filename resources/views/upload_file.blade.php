@@ -1,7 +1,12 @@
 @extends('layouts.app')
 
 @section('style')
-  <link href="{{ asset('css/style.css') }}" rel="stylesheet">
+  <style>
+    .card{
+        width: 16rem;
+        margin: 8px;
+    }
+  </style>
 @endsection
 
 @section('register')
@@ -11,7 +16,6 @@
 @endsection
 
 @section('content')
-<div class="container">
     <div class="row upload"  style="margin-top: 20px;">
         <div class="row" style="width: 100%; justify-content: center;">
             <div>
@@ -39,7 +43,6 @@
     </div>
 
     <input id="files" type="file" name="file" multiple hidden><br>
-</div>
 @endsection
 @section('script')
   <script src="{{ asset('js/script.js') }}" defer></script>

@@ -15,8 +15,6 @@ dir = sys.argv[4]+"/reservas/"
 
 dataFrames = {1:'',2:''}
 
-
-
 for item in currentPattern:
     currentFile = item.split('/').pop()
     if(str(currentFile) == 'reservas_sap_'+sys.argv[5]+'.xlsx'):

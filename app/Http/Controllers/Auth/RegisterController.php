@@ -89,6 +89,6 @@ class RegisterController extends Controller
         event(new Registered($user = $this->create($request->all())));
 
         return redirect()->route('login')
-            ->with(['success' => 'Congratulations! your account is registered.']);
+            ->with(['success' => 'Tu cuenta a sido creada!.']);
     }
 }

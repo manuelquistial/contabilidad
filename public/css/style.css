@@ -1,3 +1,16 @@
+body{
+  background-color: #ffffff;
+}
+
+.navbar-laravel {
+  background-color: #fbfbfb;
+  box-shadow: 0px 4px 9px 0px rgba(0,0,0,.04);
+}
+
+.card-header {
+  background-color: rgba(76, 175, 80, 0.09);
+}
+
 .upload-boxes{
     border-color: #c3dadc;
     border-radius: 8px 8px 8px 8px;
@@ -46,15 +59,6 @@
     display: flex;
     justify-content: center;
     align-items: center;
-}
-
-.row{
-    margin: 5px 0 5px;
-}
-
-.card{
-    width: 16rem;
-    margin: 8px;
 }
 
 .spinner {
