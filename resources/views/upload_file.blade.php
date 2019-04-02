@@ -9,10 +9,8 @@
   </style>
 @endsection
 
-@section('register')
-@if (Route::has('register'))
-    <a class="dropdown-item" href="{{ route('register') }}">{{ __('Registrar') }}</a>
-@endif
+@section('conciliar')
+    <a class="nav-link active" href="{{ route('home') }}">{{ __('Conciliar') }}</a>
 @endsection
 
 @section('content')

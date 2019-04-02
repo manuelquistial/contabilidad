@@ -1,14 +1,17 @@
 @extends('layouts.app')
 
 @section('register')
-<a class="dropdown-item" href="{{ route('home') }}">
-    {{ __('Conciliar') }}
-</a>
+    <a class="nav-link active" href="{{ route('register') }}">{{ __('Registrar') }}</a>
 @endsection
 
 @section('content')
     <div class="row justify-content-center">
         <div class="col-md-8">
+            @if (session('status'))
+                <div class="alert alert-success" role="alert">
+                    {{ session('status') }}
+                </div>
+            @endif
             <div class="card">
                 <div class="card-header">{{ __('Registro de Usuario') }}</div>
                 <div class="card-body">
@@ -74,6 +77,18 @@
 
                             <div class="col-md-6">
                                 <input id="password-confirm" type="password" class="form-control" name="password_confirmation" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <div class="col-md-6 offset-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="admin-role" id="admin-role" value="administrador">
+
+                                    <label class="form-check-label" for="admin-role">
+                                        {{ __('Administrador') }}
+                                    </label>
+                                </div>
                             </div>
                         </div>
 

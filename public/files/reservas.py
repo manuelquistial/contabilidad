@@ -93,7 +93,7 @@ for index, row in filasCorrectas.iterrows():
 
 ''' SE CREA EL ARCHIVO DE EXCEL'''
 
-writer = pd.ExcelWriter(sys.argv[4]+'files_out/Reservas_'+str(sys.argv[1])+'.xlsx', engine='xlsxwriter')
+writer = pd.ExcelWriter(sys.argv[4]+'files_out/Reservas_'+str(sys.argv[1])+'_'+sys.argv[5]+'.xlsx', engine='xlsxwriter')
 
 ''' ESTILOS '''
 workbook = writer.book

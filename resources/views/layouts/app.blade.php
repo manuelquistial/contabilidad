@@ -33,23 +33,33 @@
                 </button>
 
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <!-- Left Side Of Navbar -->
-                    <ul class="navbar-nav mr-auto">
-
-                    </ul>
-
                     <!-- Right Side Of Navbar --> 
                     <ul class="navbar-nav ml-auto">
                         <!-- Authentication Links -->
                         @guest
-                            
                         @else
+                            <li class="nav-item">
+                                @section('conciliar')
+                                    <a class="nav-link" href="{{ route('home') }}">{{ __('Conciliar') }}</a>
+                                @show
+                            </li>
+                            @if(Auth::user()->hasRole("administrador")) 
+                                <li class="nav-item">
+                                    @section('register')
+                                        <a class="nav-link" href="{{ route('register') }}">{{ __('Registrar') }}</a>
+                                    @show
+                                </li>
+                                <li class="nav-item">
+                                    @section('lista_usuarios')
+                                        <a class="nav-link" href="{{ route('list_users') }}">{{ __('Lista Usuarios') }}</a>
+                                    @show
+                                </li>
+                            @endif 
                             <li class="nav-item dropdown">
                                 <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
                                     {{ Auth::user()->name }} <span class="caret"></span>
                                 </a>
                                 <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
-                                    @yield('register')
                                     <a class="dropdown-item" href="{{ route('logout') }}"
                                        onclick="event.preventDefault();
                                                      document.getElementById('logout-form').submit();">

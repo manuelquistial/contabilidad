@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 use Auth;
 use Illuminate\Http\Request;
+use File;
 
 class UploadFileController extends Controller
 {
@@ -28,16 +29,19 @@ class UploadFileController extends Controller
       $request->validate([
           'num' => 'required',
       ]);
+      $userId = Auth::id();
       $value = request()->num;
       $files = glob(public_path('files/reservas')."/*".$userId.".{xlsx,XLSX}", GLOB_BRACE);
       if(empty($files) || (count($files) != 2)){
         return response()->json(['empty'=>'No existen los documentos necesarios para realizar reservas', 'files'=>json_encode($files)]);
       }else{
         $param = exec("python3 ".public_path()."/files/reservas.py ".$value." ".$files[0]." ".$files[1]." ".public_path('files/')." ".$userId);
+        FILE::delete($files);
         if($param){
-          $data = glob(public_path('files').'/files_out/*');
+          $data = glob(public_path('files').'/files_out/*'.$userId.'.xlsx');
           return json_encode($data);
         }else{
+          
           return response()->json(['error'=>'Error en la descarga, comuniquese con soporte']);
         }
       }
@@ -60,12 +64,13 @@ class UploadFileController extends Controller
           return response()->json(['empty'=>'No existen los documentos necesarios para conciliar', 'files'=>json_encode($files)]);
         }else{
           $param = exec("python ".public_path()."/files/conciliacion.py ".$value." ".$files[0]." ".$files[1]." ".$files[2]." ".public_path('files/')." ".$userId);
+          FILE::delete($files);
           if($param){
-            $data = glob(public_path('files').'/files_out/*');
+            $data = glob(public_path('files').'/files_out/*'.$userId.'.xlsx');
+            unlink($data);
             return json_encode($data);
           }else{
-            //return response()->json(['error'=>'Error en la descarga, comuniquese con soporte']);
-            return $param;
+            return response()->json(['error'=>'Error en la ejecucion del programa.']);
           }
         }
     }
@@ -77,12 +82,13 @@ class UploadFileController extends Controller
      */
     public function download(Request $request)
     {
+        $userId = Auth::id();
         $request->validate([
             'name' => 'required',
         ]);
         $name = request()->name;
         $file = public_path('files/files_out/').$name;
-        return response()->download($file, $name)->deleteFileAfterSend(true);
+        return response()->download($file, str_replace("_".$userId,"",$name))->deleteFileAfterSend(true);
     }
 
     /**

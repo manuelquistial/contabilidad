@@ -9,6 +9,7 @@ use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use App\Role;
 
 class RegisterController extends Controller
 {
@@ -39,6 +40,7 @@ class RegisterController extends Controller
      */
     public function __construct(){
         $this->middleware('auth');
+        $this->middleware(['role:administrador']);
     }
 
     /**
@@ -65,6 +67,7 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
+        $role = "usuario";
         $user = User::create([
             'name' => $data['name'],
             'username' => $data['username'],
@@ -72,6 +75,13 @@ class RegisterController extends Controller
             'password' => Hash::make($data['password']),
             'token' => str_random(40) . time(),
         ]);
+        if(!empty($data['admin-role'])){
+            $role = "administrador";
+        }
+
+        $user
+            ->roles()
+            ->attach(Role::where('name', $role)->first());
 
         return $user;
     }
@@ -82,13 +92,12 @@ class RegisterController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function register(Request $request)
-    {
+    public function register(Request $request){
         $this->validator($request->all())->validate();
 
         event(new Registered($user = $this->create($request->all())));
 
-        return redirect()->route('login')
-            ->with(['success' => 'Tu cuenta a sido creada!.']);
+        return redirect()->route('register')
+            ->with(['status' => 'Tu cuenta a sido creada!.']);
     }
 }

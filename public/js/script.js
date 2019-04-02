@@ -60,8 +60,6 @@ function dataUpload(url){
         _("downloads").innerHTML = '<div class="spinner"></div>';
     }, false);
     ajax.addEventListener("load", function(event){
-        
-    console.log(event.target.responseText);
         _("downloads").innerHTML = "";
         try{
         JSON.parse(event.target.responseText).forEach(function (file) {
@@ -93,21 +91,6 @@ function dataUpload(url){
 document.getElementById('numero_centro').addEventListener('input', function (evt) {
     document.getElementById("numero_centro").style.backgroundColor = '#fff';
 }, false);
-/*document.addEventListener('click', function (evt) {
-    if(evt.target.className.toString().includes("download")){
-    let token = document.getElementsByTagName('meta')['csrf-token'].getAttribute("content");
-    var name = "name="+evt.target.getAttribute("name");
-    console.log(name)
-    var ajax = new XMLHttpRequest();
-    ajax.addEventListener("load", function(event){
-        console.log(event.target.responseText)
-
-    }, false);
-    ajax.open("GET", "/download?"+name, true);
-    ajax.setRequestHeader("X-CSRF-Token", token);
-    ajax.send();
-    }
-}, false);*/
 
 function uploadFile(input, token){
     const fileListAsArray = Array.from(input);
