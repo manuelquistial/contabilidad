@@ -11,7 +11,7 @@ def styleReservas(item, row, col, worksheet, cont, format):
         worksheet.write(cont, 1, row[col[1]], format)
 
 currentPattern = [sys.argv[2],sys.argv[3]]
-dir = sys.argv[4]+"files/reservas/"
+dir = sys.argv[4]+"reservas/"
 
 dataFrames = {1:'',2:''}
 
@@ -92,7 +92,7 @@ for index, row in filasCorrectas.iterrows():
     reservasSap.loc[value.index.tolist(),'valida'] = 1
 
 ''' SE CREA EL ARCHIVO DE EXCEL'''
-writer = pd.ExcelWriter(sys.argv[4]+'files/Reservas_'+str(sys.argv[1])+'_'+sys.argv[5]+'.xlsx', engine='xlsxwriter')
+writer = pd.ExcelWriter(sys.argv[4]+'files_out/Reservas_'+str(sys.argv[1])+'_'+sys.argv[5]+'.xlsx', engine='xlsxwriter')
 ''' ESTILOS '''
 workbook = writer.book
 cell_size = 20

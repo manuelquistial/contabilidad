@@ -38,7 +38,7 @@ class UploadFileController extends Controller
         $param = exec("python3 ".storage_path('app/public')."/reservas.py ".$value." ".$files[0]." ".$files[1]." ".storage_path('app/public/')." ".$userId);
         FILE::delete($files);
         if($param){
-          $data = glob(storage_path('app/public').'/files/*'.$userId.'.xlsx');
+          $data = glob(storage_path('app/public/files/').'files_out/*'.$userId.'.xlsx');
           return json_encode($data);
         }else{
           return response()->json(['error'=>'Error en la descarga, comuniquese con soporte']);
@@ -62,10 +62,10 @@ class UploadFileController extends Controller
         if(empty($files) || (count($files) != 3)){
           return response()->json(['empty'=>'No existen los documentos necesarios para conciliar', 'files'=>json_encode($files)]);
         }else{
-        $param = exec("python3 ".storage_path('app/public')."/conciliacion.py ".$value." ".$files[0]." ".$files[1]." ".storage_path('app/public/')." ".$userId);
+        $param = exec("python3 ".storage_path('app/public')."/conciliacion.py ".$value." ".$files[0]." ".$files[1]." ".storage_path('app/public/files/')." ".$userId);
         FILE::delete($files);
           if($param){
-            $data = glob(public_path('files').'/files_out/*'.$userId.'.xlsx');
+            $data = glob(storage_path('app/public/files/').'files_out/*'.$userId.'.xlsx');
             unlink($data);
             return json_encode($data);
           }else{
@@ -86,7 +86,7 @@ class UploadFileController extends Controller
             'name' => 'required',
         ]);
         $name = request()->name;
-        $file = storage_path('app/public/files/').$name;
+        $file = storage_path('app/public/files/files_out/').$name;
         return response()->download($file, str_replace("_".$userId,"",$name))->deleteFileAfterSend(true);
     }
 
