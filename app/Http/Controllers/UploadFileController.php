@@ -31,17 +31,17 @@ class UploadFileController extends Controller
       ]);
       $userId = Auth::id();
       $value = request()->num;
-      $files = glob(public_path('files/reservas')."/*".$userId.".{xlsx,XLSX}", GLOB_BRACE);
+      $files = glob(storage_path('app/public/files/reservas')."/*".$userId.".{xlsx,XLSX}", GLOB_BRACE);
       if(empty($files) || (count($files) != 2)){
         return response()->json(['empty'=>'No existen los documentos necesarios para realizar reservas', 'files'=>json_encode($files)]);
       }else{
-        $param = exec("python3 ".public_path()."/files/reservas.py ".$value." ".$files[0]." ".$files[1]." ".public_path('files/')." ".$userId);
-        FILE::delete($files);
+        $param = exec("python3 ".storage_path('app/public')."/reservas.py ".$value." ".$files[0]." ".$files[1]." ".storage_path('app/public/')." ".$userId);
+        return response()->json(['error'=>$param]);
+        //FILE::delete($files);
         if($param){
           $data = glob(public_path('files').'/files_out/*'.$userId.'.xlsx');
           return json_encode($data);
         }else{
-          
           return response()->json(['error'=>'Error en la descarga, comuniquese con soporte']);
         }
       }
@@ -108,10 +108,10 @@ class UploadFileController extends Controller
         $fileName = $fileName."_".$userId.".xlsx";
         $var = strtolower($fileName);
         if((strpos($var, "reservas") !== false) & ((strpos($var, "sap") !== false) || (strpos($var, "sigep") !== false))){
-          request()->file->move(public_path('files/reservas'), $fileName);
+          request()->file->move(storage_path('app/public/files/reservas'), $fileName);
           return response()->json(['success'=>'Archivo agregado']);
         }elseif((strpos($var, "pagos") !== false) || (strpos($var, "recaudos") !== false) || (strpos($var, "general") !== false)){
-          request()->file->move(public_path('files/conciliacion'), $fileName);
+          request()->file->move(storage_path('app/public/files/conciliacion'), $fileName);
           return response()->json(['success'=>'Archivo agregado']);
         }else{
           return response()->json(['error'=>'Archivo incorrecto']);

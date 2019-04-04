@@ -80,7 +80,7 @@ function dataUpload(url){
         }
         }
     }, false);
-    ajax.open("GET", "/"+url+"?"+param, true);
+    ajax.open("GET", window.location.href+"/"+url+"?"+param, true);
     ajax.setRequestHeader("X-CSRF-Token", token);
     ajax.send();
     }else{
@@ -105,7 +105,7 @@ function uploadFile(input, token){
             completeHandler(evt, index);}, false);
         ajax.addEventListener("error", function(evt){errorHandler(evt, index);}, false);
         ajax.addEventListener("abort", function(evt){abortHandler(evt, index);}, false);
-        ajax.open("POST", "/file-upload", true);
+        ajax.open("POST", window.location.href+"/file-upload", true);
         ajax.setRequestHeader("X-CSRF-Token", token);
         ajax.send(formdata);
     });
@@ -126,6 +126,7 @@ function progressHandler(event, index) {
 }
 
 function completeHandler(event, index) {
+    console.log(event.target.responseText);
     if(JSON.parse(event.target.responseText).success == undefined){
         _("status"+index).innerHTML = JSON.parse(event.target.responseText).error;
         _("status"+index).style.color = "#fb505f";
