@@ -61,23 +61,24 @@ function dataUpload(url){
     }, false);
     ajax.addEventListener("load", function(event){
         _("downloads").innerHTML = "";
+        console.log(event.target.responseText)
         try{
-        JSON.parse(event.target.responseText).forEach(function (file) {
-                _("downloads").innerHTML += '<div class="card"><div class="card-body"><h5 class="card-title">'+file.split('/').pop()+'</h5><a href="download?name='+file.split('/').pop()+'" role="button" class="btn btn-outline-danger">Descargar</a></div></div>'
+            JSON.parse(event.target.responseText).forEach(function (file) {
+                _("downloads").innerHTML += '<div class="card"><div class="card-body"><h5 class="card-title">'+file.split('/').pop()+'</h5><a href="'+window.location.href+'/download?name='+file.split('/').pop()+'" role="button" class="btn btn-outline-danger">Descargar</a></div></div>'
         });
         }catch(e){
-        _("downloads").style.display = "inline-flex";
-        _("downloads").innerHTML = '<p id="downloads_text"></p>';
-        if(JSON.parse(event.target.responseText).error == undefined){
-            _("downloads_text").innerHTML += JSON.parse(event.target.responseText).empty;
-            _("downloads_text").innerHTML += ", documentos encontrados:"
-            var value = JSON.parse(JSON.parse(event.target.responseText).files);
-            value.forEach(function (file) {
-                _("downloads_text").innerHTML += '<br>'+file.split('/').pop();
-            });
-        }else{
-            _("downloads_text").innerHTML = JSON.parse(event.target.responseText).error;
-        }
+            _("downloads").style.display = "inline-flex";
+            _("downloads").innerHTML = '<p id="downloads_text"></p>';
+            if(JSON.parse(event.target.responseText).error == undefined){
+                _("downloads_text").innerHTML += JSON.parse(event.target.responseText).empty;
+                _("downloads_text").innerHTML += ", documentos encontrados:"
+                var value = JSON.parse(JSON.parse(event.target.responseText).files);
+                value.forEach(function (file) {
+                    _("downloads_text").innerHTML += '<br>'+file.split('/').pop();
+                });
+            }else{
+                _("downloads_text").innerHTML = JSON.parse(event.target.responseText).error;
+            }
         }
     }, false);
     ajax.open("GET", window.location.href+"/"+url+"?"+param, true);
@@ -126,7 +127,6 @@ function progressHandler(event, index) {
 }
 
 function completeHandler(event, index) {
-    console.log(event.target.responseText);
     if(JSON.parse(event.target.responseText).success == undefined){
         _("status"+index).innerHTML = JSON.parse(event.target.responseText).error;
         _("status"+index).style.color = "#fb505f";

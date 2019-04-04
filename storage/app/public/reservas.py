@@ -92,9 +92,7 @@ for index, row in filasCorrectas.iterrows():
     reservasSap.loc[value.index.tolist(),'valida'] = 1
 
 ''' SE CREA EL ARCHIVO DE EXCEL'''
-
-writer = pd.ExcelWriter(sys.argv[4]+'files_out/Reservas_'+str(sys.argv[1])+'_'+sys.argv[5]+'.xlsx', engine='xlsxwriter')
-print(writer)
+writer = pd.ExcelWriter(sys.argv[4]+'files/Reservas_'+str(sys.argv[1])+'_'+sys.argv[5]+'.xlsx', engine='xlsxwriter')
 ''' ESTILOS '''
 workbook = writer.book
 cell_size = 20

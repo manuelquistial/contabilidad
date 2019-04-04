@@ -36,10 +36,9 @@ class UploadFileController extends Controller
         return response()->json(['empty'=>'No existen los documentos necesarios para realizar reservas', 'files'=>json_encode($files)]);
       }else{
         $param = exec("python3 ".storage_path('app/public')."/reservas.py ".$value." ".$files[0]." ".$files[1]." ".storage_path('app/public/')." ".$userId);
-        return response()->json(['error'=>$param]);
-        //FILE::delete($files);
+        FILE::delete($files);
         if($param){
-          $data = glob(public_path('files').'/files_out/*'.$userId.'.xlsx');
+          $data = glob(storage_path('app/public').'/files/*'.$userId.'.xlsx');
           return json_encode($data);
         }else{
           return response()->json(['error'=>'Error en la descarga, comuniquese con soporte']);
@@ -59,12 +58,12 @@ class UploadFileController extends Controller
         ]);
         $userId = Auth::id();
         $value = request()->num;
-        $files = glob(public_path('files/conciliacion')."/*".$userId.".{xlsx,XLSX}", GLOB_BRACE);
+        $files = glob(storage_path('app/public/files/conciliacion')."/*".$userId.".{xlsx,XLSX}", GLOB_BRACE);
         if(empty($files) || (count($files) != 3)){
           return response()->json(['empty'=>'No existen los documentos necesarios para conciliar', 'files'=>json_encode($files)]);
         }else{
-          $param = exec("python ".public_path()."/files/conciliacion.py ".$value." ".$files[0]." ".$files[1]." ".$files[2]." ".public_path('files/')." ".$userId);
-          FILE::delete($files);
+        $param = exec("python3 ".storage_path('app/public')."/conciliacion.py ".$value." ".$files[0]." ".$files[1]." ".storage_path('app/public/')." ".$userId);
+        FILE::delete($files);
           if($param){
             $data = glob(public_path('files').'/files_out/*'.$userId.'.xlsx');
             unlink($data);
@@ -87,7 +86,7 @@ class UploadFileController extends Controller
             'name' => 'required',
         ]);
         $name = request()->name;
-        $file = public_path('files/files_out/').$name;
+        $file = storage_path('app/public/files/').$name;
         return response()->download($file, str_replace("_".$userId,"",$name))->deleteFileAfterSend(true);
     }
 
