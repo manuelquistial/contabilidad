@@ -155,4 +155,3 @@ worksheet.write(totalReserva[2], 1, '=SUM(B2:B'+str(totalReserva[2])+')', money)
 
 # Close the Pandas Excel writer and output the Excel file.
 writer.save()
-print(True)

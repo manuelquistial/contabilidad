@@ -13,8 +13,7 @@
 
 Auth::routes();
 
-Route::get('/', 'HomeController@index');
-Route::get('/home', 'UploadFileController@index')->name('home');
+Route::get('/', 'UploadFileController@index')->name('home');
 Route::post('/file-upload', 'UploadFileController@fileUploadPost');
 Route::get('/conciliacion', 'UploadFileController@downloadConciliacion');
 Route::get('/reservas', 'UploadFileController@downloadReservas');

@@ -42,50 +42,54 @@ document.body.addEventListener('dragleave', function (evt) {
 }, false);
 
 document.getElementById('reservas').addEventListener('click', function (evt) {
-    dataUpload(document.getElementById("reservas").id);
+    let classes = document.getElementById('conciliacion');
+    dataUpload(document.getElementById("reservas").id, classes);
 }, false);
 
 document.getElementById('conciliacion').addEventListener('click', function (evt) {
-    dataUpload(document.getElementById("conciliacion").id);
+    let classes = document.getElementById('reservas');
+    dataUpload(document.getElementById("conciliacion").id, classes);
 }, false);
 
-function dataUpload(url){
+function dataUpload(url, classes){
     let token = document.getElementsByTagName('meta')['csrf-token'].getAttribute("content");
     var num = document.getElementById("numero_centro").value;
     if(num != ""){
-    _("downloads").style.display = "flex";
-    let param = "num="+num;
-    var ajax = new XMLHttpRequest();
-    ajax.addEventListener("loadstart", function(event){
-        _("downloads").innerHTML = '<div class="spinner"></div>';
-    }, false);
-    ajax.addEventListener("load", function(event){
-        _("downloads").innerHTML = "";
-        console.log(event.target.responseText)
-        try{
-            JSON.parse(event.target.responseText).forEach(function (file) {
-                _("downloads").innerHTML += '<div class="card"><div class="card-body"><h5 class="card-title">'+file.split('/').pop()+'</h5><a href="'+window.location.href+'/download?name='+file.split('/').pop()+'" role="button" class="btn btn-outline-danger">Descargar</a></div></div>'
-        });
-        }catch(e){
-            _("downloads").style.display = "inline-flex";
-            _("downloads").innerHTML = '<p id="downloads_text"></p>';
-            if(JSON.parse(event.target.responseText).error == undefined){
-                _("downloads_text").innerHTML += JSON.parse(event.target.responseText).empty;
-                _("downloads_text").innerHTML += ", documentos encontrados:"
-                var value = JSON.parse(JSON.parse(event.target.responseText).files);
-                value.forEach(function (file) {
-                    _("downloads_text").innerHTML += '<br>'+file.split('/').pop();
+        classes.classList.add('disabled');
+        _("downloads").style.display = "flex";
+        let param = "num="+num;
+        var ajax = new XMLHttpRequest();
+        ajax.addEventListener("loadstart", function(event){
+            _("downloads").innerHTML = '<div class="spinner"></div>';
+        }, false);
+        ajax.addEventListener("load", function(event){
+            _("downloads").innerHTML = "";
+            try{
+                JSON.parse(event.target.responseText).forEach(function (file) {
+                    _("downloads").innerHTML += '<div class="card"><div class="card-body"><h5 class="card-title">'+file.split('/').pop()+'</h5><a href="'+window.location.href+'/download?name='+file.split('/').pop()+'" role="button" class="btn btn-outline-danger">Descargar</a></div></div>'
                 });
-            }else{
-                _("downloads_text").innerHTML = JSON.parse(event.target.responseText).error;
+                classes.classList.remove('disabled');
+            }catch(e){
+                classes.classList.remove('disabled');
+                _("downloads").style.display = "inline-flex";
+                _("downloads").innerHTML = '<p id="downloads_text"></p>';
+                if(JSON.parse(event.target.responseText).error == undefined){
+                    _("downloads_text").innerHTML += JSON.parse(event.target.responseText).empty;
+                    _("downloads_text").innerHTML += ", documentos encontrados:"
+                    var value = JSON.parse(JSON.parse(event.target.responseText).files);
+                    value.forEach(function (file) {
+                        _("downloads_text").innerHTML += '<br>'+file.split('/').pop();
+                    });
+                }else{
+                    _("downloads_text").innerHTML = JSON.parse(event.target.responseText).error;
+                }
             }
-        }
-    }, false);
-    ajax.open("GET", window.location.href+"/"+url+"?"+param, true);
-    ajax.setRequestHeader("X-CSRF-Token", token);
-    ajax.send();
+        }, false);
+        ajax.open("GET", window.location.href+"/"+url+"?"+param, true);
+        ajax.setRequestHeader("X-CSRF-Token", token);
+        ajax.send();
     }else{
-    document.getElementById("numero_centro").style.backgroundColor = '#fb505f4d';
+        document.getElementById("numero_centro").style.backgroundColor = '#fb505f4d';
     }
 }
 

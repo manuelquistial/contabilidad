@@ -74,7 +74,7 @@ def totalesSheets(worksheet, shapes, format, item):
         worksheet.write(shapes, 25, '=SUM(Z2:Z'+str(shapes)+')', format)
 
 currentPattern = [sys.argv[2],sys.argv[3],sys.argv[4]]
-dir = sys.argv[5]+"/conciliacion/"
+dir = sys.argv[5]+"conciliacion/"
 dataFrames = {1:'',2:'',3:''}
 
 for item in currentPattern:
@@ -198,7 +198,7 @@ pagosValidar = pagos.apply(lambda s: (s['valida'] != 0) & (s['Diferencia'] != 0)
 pagosValidar = pagos[pagosValidar]
 
 ''' SE CREA EL ARCHIVO DE EXCEL'''
-writer = pd.ExcelWriter(sys.argv[5]+'files_out/Centro_de_Costos_'+str(sys.argv[1])+'_'+sys.argv[5]+'.xlsx', engine='xlsxwriter')
+writer = pd.ExcelWriter(sys.argv[5]+'files_out/Centro_de_Costos_'+str(sys.argv[1])+'_'+sys.argv[6]+'.xlsx', engine='xlsxwriter')
 
 sheets = {1:'Recaudos_SAP',2:'Ingresos_SIGEP',3:'Pagos_SAP',4:'Egresos_SIGEP'}
 
@@ -365,4 +365,3 @@ worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+11, 4, '=SS!B'+str(shapeSAP[
 
 # Close the Pandas Excel writer and output the Excel file.
 writer.save()
-print(True)
