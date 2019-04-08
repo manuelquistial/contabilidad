@@ -77,11 +77,11 @@ def totalesSheets(worksheet, shapes, format, item, total):
         worksheet.write(shapes, 25, '=SUM(Z2:Z'+str(shapes)+')', format)
 
 currentPattern = [sys.argv[2],sys.argv[3],sys.argv[4]]
-dir = sys.argv[5]+"conciliacion\\"
+dir = sys.argv[5]+"conciliacion/"
 dataFrames = {1:'',2:'',3:''}
 
 for item in currentPattern:
-    currentFile = item.split('\\').pop()
+    currentFile = item.split('/').pop()
     if(str(currentFile).lower() == 'general_sigep_'+sys.argv[6]+'.xlsx'):
         dataFrames[1]= pd.read_excel(dir+currentFile)
     elif(str(currentFile).lower() == 'pagos_sap_'+sys.argv[6]+'.xlsx'):
@@ -212,7 +212,7 @@ pagosValidar = pagosValidar.groupby([cols[0]]).sum()
 pagosValidar = pagosValidar.reset_index()
 
 ''' SE CREA EL ARCHIVO DE EXCEL'''
-writer = pd.ExcelWriter(sys.argv[5]+'files_out\Centro_de_Costos_'+str(sys.argv[1])+'_'+sys.argv[6]+'.xlsx', engine='xlsxwriter')
+writer = pd.ExcelWriter(sys.argv[5]+'files_out/Centro_de_Costos_'+str(sys.argv[1])+'_'+sys.argv[6]+'.xlsx', engine='xlsxwriter')
 
 sheets = {1:'Recaudos_SAP',2:'Ingresos_SIGEP',3:'Pagos_SAP',4:'Egresos_SIGEP'}
 
