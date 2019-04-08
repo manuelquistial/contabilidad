@@ -58,27 +58,30 @@ def style(item, row, col, worksheet, cont, format):
         worksheet.write(cont, 1, row[col[1]], format)
         worksheet.write(cont, 12, '=SUMAR.SI.CONJUNTO(Egresos_SIGEP!B:B,Egresos_SIGEP!A:A,Egresos_SIGEP!A'+str(cont+1)+',Egresos_SIGEP!G:G,Egresos_SIGEP!G:G)-L'+str(cont+1), format)
 
-def totalesSheets(worksheet, shapes, format, item):
+def totalesSheets(worksheet, shapes, format, item, total):
+    moneyTotalSap = workbook.add_format({'num_format': '#,##', 'fg_color':'#ffff00'})
     if(item == 2) | (item == 4):
         worksheet.write(shapes, 1, '=SUM(B2:B'+str(shapes)+')', format)
         worksheet.write(shapes, 11, '=SUM(L2:L'+str(shapes)+')', format)
         worksheet.write(shapes, 12, '=SUM(M2:M'+str(shapes)+')', format)
     elif(item == 3):
-        worksheet.write(shapes, 1, '=SUM(B2:B'+str(shapes)+')', format)
+        worksheet.write(shapes, 1, total[1], moneyTotalSap)
+        worksheet.write(shapes+1, 1, '=SUM(B2:B'+str(shapes)+')', format)
         worksheet.write(shapes, 24, '=SUM(Y2:Y'+str(shapes)+')', format)
         worksheet.write(shapes, 25, '=SUM(Z2:Z'+str(shapes)+')', format)
         worksheet.write(shapes, 26, '=SUM(AA2:AA'+str(shapes)+')', format)
     elif(item == 1):
-        worksheet.write(shapes, 1, '=SUM(B2:B'+str(shapes)+')', format)
+        worksheet.write(shapes, 1, total[2], moneyTotalSap)
+        worksheet.write(shapes+1, 1, '=SUM(B2:B'+str(shapes)+')', format)
         worksheet.write(shapes, 24, '=SUM(Y2:Y'+str(shapes)+')', format)
         worksheet.write(shapes, 25, '=SUM(Z2:Z'+str(shapes)+')', format)
 
 currentPattern = [sys.argv[2],sys.argv[3],sys.argv[4]]
-dir = sys.argv[5]+"conciliacion/"
+dir = sys.argv[5]+"conciliacion\\"
 dataFrames = {1:'',2:'',3:''}
 
 for item in currentPattern:
-    currentFile = item.split('/').pop()
+    currentFile = item.split('\\').pop()
     if(str(currentFile).lower() == 'general_sigep_'+sys.argv[6]+'.xlsx'):
         dataFrames[1]= pd.read_excel(dir+currentFile)
     elif(str(currentFile).lower() == 'pagos_sap_'+sys.argv[6]+'.xlsx'):
@@ -112,9 +115,11 @@ for sigep in generalSigepItems:
     values['valida'] = 0
     generalSigepItems[sigep] = values
 
+totaDetSap = {1:'', 2:''}
 #pagosSap
 cols = pagosSap.columns.tolist()
 cols = [cols[7]] + [cols[5]] + cols[0:5]+ [cols[6]] + cols[8:]
+totaDetSap[1] = pagosSap.loc[pagosSap.shape[0]-1,cols[1]]
 pagosSap = pagosSap[cols]
 pagosSap = pagosSap[:-1]
 fecha = pagosSap[cols[5]].dt.strftime('%m/%d/%Y')
@@ -130,6 +135,7 @@ pagosSap['valida'] = 0
 #recaudosSap
 cols = recaudosSap.columns.tolist()
 cols = [cols[6]] + [cols[5]] + cols[0:5] + cols[7:]
+totaDetSap[2] = recaudosSap.loc[recaudosSap.shape[0]-1,cols[1]]
 recaudosSap = recaudosSap[cols]
 recaudosSap = recaudosSap[:-1]
 fecha = recaudosSap[cols[5]].dt.strftime('%m/%d/%Y')
@@ -206,7 +212,7 @@ pagosValidar = pagosValidar.groupby([cols[0]]).sum()
 pagosValidar = pagosValidar.reset_index()
 
 ''' SE CREA EL ARCHIVO DE EXCEL'''
-writer = pd.ExcelWriter(sys.argv[5]+'files_out/Centro_de_Costos_'+str(sys.argv[1])+'_'+sys.argv[6]+'.xlsx', engine='xlsxwriter')
+writer = pd.ExcelWriter(sys.argv[5]+'files_out\Centro_de_Costos_'+str(sys.argv[1])+'_'+sys.argv[6]+'.xlsx', engine='xlsxwriter')
 
 sheets = {1:'Recaudos_SAP',2:'Ingresos_SIGEP',3:'Pagos_SAP',4:'Egresos_SIGEP'}
 
@@ -234,7 +240,7 @@ titleConciliacion = workbook.add_format({'bold': 1, 'fg_color': '#FCE4D6'})
 ''' Conciliacion '''
 worksheet = writer.sheets['Conciliación']
 worksheet.set_column('A:E', cell_size, None)
-worksheet.write(0, 0, 'CONCILIACIÓN CENTRO DE COSTOS ##', bold)
+worksheet.write(0, 0, 'CONCILIACIÓN CENTRO DE COSTOS '+str(sys.argv[1]), bold)
 worksheet.write(3, 0, 'Ingresos', bold)
 worksheet.write(3, 3, 'SAP', bold)
 worksheet.write(3, 4, 'SIGEP', bold)
@@ -356,7 +362,7 @@ for item in dataFrames:
             style(item, row, col, worksheet, cont, ss_info_money)
 
         cont = cont + 1
-    totalesSheets(worksheet, shapes-1, money, item)
+    totalesSheets(worksheet, shapes-1, money, item, totaDetSap)
     worksheet.set_row(0, 30, title)
 
 ''' TOTALES EN CONCILIACION'''
@@ -366,8 +372,8 @@ worksheet.write(4, 0, 'Notas')
 worksheet.write(4, 3, '=Recaudos_SAP!B'+str(totales[1]), money)
 worksheet.write(4, 4, '=Ingresos_SIGEP!B'+str(totales[2]), money)
 worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+10, 0, 'Notas')
-worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+10, 3, '=Pagos_SAP!B'+str(totales[3]), money)
-worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+10, 4, '=Egresos_SIGEP!B'+str(totales[4]), money)
+worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+10, 3, '=Pagos_SAP!B'+str(totales[3]+1), money)
+worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+10, 4, '=Egresos_SIGEP!B'+str(totales[4]+1), money)
 worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+11, 0, 'Más SS Social Cobrada de Mas al CC')
 worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+11, 4, '=SS!B'+str(shapeSAP[0]+shapeSIGEP[0]+10), money)
 
