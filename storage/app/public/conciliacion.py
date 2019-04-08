@@ -41,7 +41,7 @@ def style(item, row, col, worksheet, cont, format):
             worksheet.write(cont, 24, '=SUMAR.SI.CONJUNTO(Ingresos_SIGEP!B:B,Ingresos_SIGEP!A:A,Recaudos_SAP!A'+str(cont+1)+',Ingresos_SIGEP!G:G,Recaudos_SAP!G:G)', recaudo_positivo_money)
             worksheet.write(cont, 25, '=SUMAR.SI.CONJUNTO(Recaudos_SAP!B:B,Recaudos_SAP!A:A,Recaudos_SAP!A'+str(cont+1)+',Recaudos_SAP!G:G,Recaudos_SAP!G:G)-Y'+str(cont+1), recaudo_positivo_money)
         else:
-            worksheet.write(cont, 1,  abs(row[col[1]]), format)
+            worksheet.write(cont, 1,  row[col[1]], format)
             worksheet.write(cont, 24, '=SUMAR.SI.CONJUNTO(Ingresos_SIGEP!B:B,Ingresos_SIGEP!A:A,Recaudos_SAP!A'+str(cont+1)+',Ingresos_SIGEP!G:G,Recaudos_SAP!G:G)', format)
             worksheet.write(cont, 25, '=SUMAR.SI.CONJUNTO(Recaudos_SAP!B:B,Recaudos_SAP!A:A,Recaudos_SAP!A'+str(cont+1)+',Recaudos_SAP!G:G,Recaudos_SAP!G:G)-Y'+str(cont+1), format)
     elif(item == 2):
@@ -79,11 +79,11 @@ dataFrames = {1:'',2:'',3:''}
 
 for item in currentPattern:
     currentFile = item.split('/').pop()
-    if(str(currentFile) == 'general_sigep_'+sys.argv[6]+'.xlsx'):
+    if(str(currentFile).lower() == 'general_sigep_'+sys.argv[6]+'.xlsx'):
         dataFrames[1]= pd.read_excel(dir+currentFile)
-    elif(str(currentFile) == 'pagos_sap_'+sys.argv[6]+'.xlsx'):
+    elif(str(currentFile).lower() == 'pagos_sap_'+sys.argv[6]+'.xlsx'):
         dataFrames[2]= pd.read_excel(dir+currentFile)
-    elif(str(currentFile) == 'recaudos_sap_'+sys.argv[6]+'.xlsx'):
+    elif(str(currentFile).lower() == 'recaudos_sap_'+sys.argv[6]+'.xlsx'):
         dataFrames[3]= pd.read_excel(dir+currentFile)
 
 generalSigep = dataFrames[1]
@@ -102,7 +102,7 @@ for sigep in generalSigepItems:
     cols = values.columns.tolist()
     cols = [cols[9]] + [cols[7]] + cols[0:4] + [cols[10]] + cols[4:7] + [cols[8]]
     values = values[cols]
-    fecha = values[cols[5]].dt.strftime('%m/%d/%Y')
+    fecha = pd.to_datetime(values[cols[5]], format = '%m/%d/%Y')
     values.update(fecha)
     ref = values[cols[0]].astype('int64')
     values.update(ref)
@@ -193,9 +193,17 @@ positivosRecaudos = recaudos[positivosRecaudos]
 
 recaudosValidar = recaudos.apply(lambda s: (s['valida'] != 0) & (s[cols[1]] <= 0), axis=1)
 recaudosValidar = recaudos[recaudosValidar]
+cols = recaudosValidar.columns.tolist()
+recaudosValidar = recaudosValidar[[cols[0]]+ [cols[1]]]
+recaudosValidar = recaudosValidar.groupby([cols[0]]).sum()
+recaudosValidar = recaudosValidar.reset_index()
 
 pagosValidar = pagos.apply(lambda s: (s['valida'] != 0) & (s['Diferencia'] != 0) & (str(s[cols[4]]).lower()[0:6] != 'automn'), axis=1)
 pagosValidar = pagos[pagosValidar]
+cols = pagosValidar.columns.tolist()
+pagosValidar = pagosValidar[[cols[0]]+ [cols[1]]]
+pagosValidar = pagosValidar.groupby([cols[0]]).sum()
+pagosValidar = pagosValidar.reset_index()
 
 ''' SE CREA EL ARCHIVO DE EXCEL'''
 writer = pd.ExcelWriter(sys.argv[5]+'files_out/Centro_de_Costos_'+str(sys.argv[1])+'_'+sys.argv[6]+'.xlsx', engine='xlsxwriter')
@@ -248,8 +256,8 @@ for index, row in recaudosValidar.iterrows():
     cont = cont + 1
 
 worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+6, 0, 'Total', bold)
-worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+6, 3, '=D5-SUM(D6:D'+str(shapePositivos[0]+shapeRecaudosV[0]+5)+')', money)
-worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+6, 4, '=E5', money)
+worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+6, 3, '=D5-SUM(D6:D'+str(shapePositivos[0]+5)+')', money)
+worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+6, 4, '=E5-SUM(E'+str(shapeRecaudosV[0]+6)+':E'+str(shapePositivos[0]+shapeRecaudosV[0]+5)+')', money)
 worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+7, 0, 'Diferencias', bold)
 worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+7, 4, '=D'+str(shapePositivos[0]+shapeRecaudosV[0]+7)+'-E'+str(shapePositivos[0]+shapeRecaudosV[0]+7), bold_money)
 
