@@ -92,7 +92,9 @@ class UploadFileController extends Controller
         ]);
         $name = request()->name;
         $file = storage_path('app/public/files/files_out/').$name;
-        return response()->download($file, str_replace("_".$userId,"",$name))->deleteFileAfterSend(true);
+        $name = explode("_", request()->name);
+        array_pop($name);
+        return response()->download($file, implode("_", $name).".xlsx")->deleteFileAfterSend(true);
     }
 
     /**

@@ -76,6 +76,12 @@ def totalesSheets(worksheet, shapes, format, item, total):
         worksheet.write(shapes, 24, '=SUM(Y2:Y'+str(shapes)+')', format)
         worksheet.write(shapes, 25, '=SUM(Z2:Z'+str(shapes)+')', format)
 
+def verificaDataFrameVacio(worksheet, conciliar, fila, col, dato, tag):
+    if(conciliar.empty):
+        worksheet.write(fila, col, 0, tag)
+    else:
+        worksheet.write(fila, col, dato, tag)
+
 currentPattern = [sys.argv[2],sys.argv[3],sys.argv[4]]
 dir = sys.argv[5]+"conciliacion/"
 dataFrames = {1:'',2:'',3:''}
@@ -230,6 +236,24 @@ egresoV.to_excel(writer, index=False, sheet_name=sheets[4])
 
 ''' ESTILOS '''
 workbook = writer.book
+merge_center = workbook.add_format({
+    'align': 'center',
+    'valign': 'vcenter'})
+merge_format = workbook.add_format({
+    'bold': 1,
+    'align': 'center',
+    'valign': 'vcenter',
+    'fg_color': '#acb9ca'})
+merge_bold = workbook.add_format({
+    'bold': 1,
+    'align': 'center',
+    'valign': 'vcenter'})
+merge_bold_color = workbook.add_format({
+    'bold': 1,
+    'align': 'center',
+    'valign': 'vcenter',
+    'fg_color': '#ededed'})
+
 cell_size = 20
 bold = workbook.add_format({'bold': 1})
 bold_money = workbook.add_format({'bold': 1, 'num_format': '#,##'})
@@ -240,16 +264,16 @@ titleConciliacion = workbook.add_format({'bold': 1, 'fg_color': '#FCE4D6'})
 ''' Conciliacion '''
 worksheet = writer.sheets['Conciliación']
 worksheet.set_column('A:E', cell_size, None)
-worksheet.write(0, 0, 'CONCILIACIÓN CENTRO DE COSTOS '+str(sys.argv[1]), bold)
-worksheet.write(3, 0, 'Ingresos', bold)
-worksheet.write(3, 3, 'SAP', bold)
-worksheet.write(3, 4, 'SIGEP', bold)
+worksheet.merge_range('A1:E2', 'CONCILIACIÓN CENTRO DE COSTOS '+str(sys.argv[1]), merge_format)
+worksheet.merge_range('A4:C4', 'Ingresos', merge_bold_color)
+worksheet.write(3, 3, 'SAP', merge_bold_color)
+worksheet.write(3, 4, 'SIGEP', merge_bold_color)
 
 cols = positivosRecaudos.columns.tolist()
 shapePositivos = positivosRecaudos.shape
 cont = 5
 for index, row in positivosRecaudos.iterrows():
-    worksheet.write(cont, 0, 'Menos ingreso '+str(int(row[cols[0]]))+' (en positivo no se registra)')
+    worksheet.merge_range('A'+str(cont+1)+':C'+str(cont+1), 'Menos ingreso '+str(int(row[cols[0]]))+' (en positivo no se registra)', merge_center)
     worksheet.write(cont, 3, row[cols[1]], money)
     cont = cont + 1
 
@@ -257,32 +281,33 @@ cols = recaudosValidar.columns.tolist()
 shapeRecaudosV = recaudosValidar.shape
 cont = shapePositivos[0] + 5
 for index, row in recaudosValidar.iterrows():
-    worksheet.write(cont, 0, int(row[cols[0]]))
+    worksheet.merge_range('A'+str(cont+1)+':C'+str(cont+1), int(row[cols[0]]), merge_center)
     worksheet.write(cont, 4, row[cols[1]], money)
     cont = cont + 1
 
-worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+6, 0, 'Total', bold)
+worksheet.merge_range('A'+str(shapePositivos[0]+shapeRecaudosV[0]+7)+':C'+str(shapePositivos[0]+shapeRecaudosV[0]+7), 'Total', merge_bold)
 worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+6, 3, '=D5-SUM(D6:D'+str(shapePositivos[0]+5)+')', money)
-worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+6, 4, '=E5-SUM(E'+str(shapeRecaudosV[0]+6)+':E'+str(shapePositivos[0]+shapeRecaudosV[0]+5)+')', money)
-worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+7, 0, 'Diferencias', bold)
+worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+6, 4, '=E5-SUM(E'+str(shapePositivos[0]+6)+':E'+str(shapePositivos[0]+shapeRecaudosV[0]+5)+')', money)
+worksheet.merge_range('A'+str(shapePositivos[0]+shapeRecaudosV[0]+8)+':C'+str(shapePositivos[0]+shapeRecaudosV[0]+8), 'Diferencias', merge_bold)
 worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+7, 4, '=D'+str(shapePositivos[0]+shapeRecaudosV[0]+7)+'-E'+str(shapePositivos[0]+shapeRecaudosV[0]+7), bold_money)
 
 cols = pagosValidar.columns.tolist()
 shapePagosValida = pagosValidar.shape
-worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+9, 0, 'Egresos', bold)
-worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+9, 3, 'SAP', bold)
-worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+9, 4, 'SIGEP', bold)
+worksheet.merge_range('A'+str(shapePositivos[0]+shapeRecaudosV[0]+10)+':C'+str(shapePositivos[0]+shapeRecaudosV[0]+10), 'Egresos', merge_bold_color)
+worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+9, 3, 'SAP', merge_bold_color)
+worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+9, 4, 'SIGEP', merge_bold_color)
 
 cont = shapePositivos[0]+shapeRecaudosV[0]+12
 for index, row in pagosValidar.iterrows():
-    worksheet.write(cont, 0, int(row[cols[0]]))
+    worksheet.merge_range('A'+str(cont+1)+':C'+str(cont+1), int(row[cols[0]]), merge_center)
     worksheet.write(cont, 4, row[cols[1]], money)
     cont = cont + 1
 
-worksheet.write(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+13, 0, 'Total', bold)
+
+worksheet.merge_range('A'+str(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+14)+':C'+str(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+14), 'Total', merge_bold)
 worksheet.write(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+13, 3, '=D'+str(shapePositivos[0]+shapeRecaudosV[0]+11), money)
 worksheet.write(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+13, 4, '=SUM(E'+str(shapePositivos[0]+shapeRecaudosV[0]+11)+':E'+str(shapePagosValida[0]+shapeRecaudosV[0]+shapePositivos[0]+12)+')', money)
-worksheet.write(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+14, 0, 'Diferencias', bold)
+worksheet.merge_range('A'+str(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+15)+':C'+str(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+15), 'Diferencias', merge_bold)
 worksheet.write(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+14, 4, '=D'+str(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+14)+'-E'+str(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+14), bold_money)
 
 ''' HOJA DE SEGURIDAD SOCIAL SS '''
@@ -306,9 +331,9 @@ worksheet.write(shapeSAP[0]+shapeSIGEP[0]+5, 1,  '=SUM(B'+str(shapeSAP[0]+6)+':B
 worksheet.write(shapeSAP[0]+4, 0, 'SS SIGEP', bold)
 
 worksheet.write(shapeSAP[0]+shapeSIGEP[0]+7, 0, 'SAP')
-worksheet.write(shapeSAP[0]+shapeSIGEP[0]+7, 1, '=B'+str(shapeSAP[0]+2), money)
+verificaDataFrameVacio(worksheet, seguridadSap, shapeSAP[0]+shapeSIGEP[0]+7, 1, '=B'+str(shapeSAP[0]+2), money)
 worksheet.write(shapeSAP[0]+shapeSIGEP[0]+8, 0, 'SIGEP')
-worksheet.write(shapeSAP[0]+shapeSIGEP[0]+8, 1, '=B'+str(shapeSAP[0]+shapeSIGEP[0]+6), money)
+verificaDataFrameVacio(worksheet, seguridadSigep, shapeSAP[0]+shapeSIGEP[0]+8, 1, '=B'+str(shapeSAP[0]+shapeSIGEP[0]+6), money)
 worksheet.write(shapeSAP[0]+shapeSIGEP[0]+9, 0, 'Diferencia')
 worksheet.write(shapeSAP[0]+shapeSIGEP[0]+9, 1, '=B'+str(shapeSAP[0]+shapeSIGEP[0]+8)+'-B'+str(shapeSAP[0]+shapeSIGEP[0]+9), bold_money)
 
@@ -368,13 +393,13 @@ for item in dataFrames:
 ''' TOTALES EN CONCILIACION'''
 worksheet = writer.sheets['Conciliación']
 #Ingresos
-worksheet.write(4, 0, 'Notas')
-worksheet.write(4, 3, '=Recaudos_SAP!B'+str(totales[1]), money)
-worksheet.write(4, 4, '=Ingresos_SIGEP!B'+str(totales[2]), money)
-worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+10, 0, 'Notas')
-worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+10, 3, '=Pagos_SAP!B'+str(totales[3]+1), money)
-worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+10, 4, '=Egresos_SIGEP!B'+str(totales[4]+1), money)
-worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+11, 0, 'Más SS Social Cobrada de Mas al CC')
+worksheet.merge_range('A5:C5', 'Notas', merge_center)
+worksheet.merge_range('A'+str(shapePositivos[0]+shapeRecaudosV[0]+11)+':C'+str(shapePositivos[0]+shapeRecaudosV[0]+11), 'Notas', merge_center)
+worksheet.merge_range('A'+str(shapePositivos[0]+shapeRecaudosV[0]+12)+':C'+str(shapePositivos[0]+shapeRecaudosV[0]+12), 'Más SS Social Cobrada de Mas al CC', merge_center)
+verificaDataFrameVacio(worksheet, dataFrames[3], 4, 3, '=Recaudos_SAP!B'+str(totales[1]+1), money)
+verificaDataFrameVacio(worksheet, generalSigepItems[1], 4, 4, '=Ingresos_SIGEP!B'+str(totales[2]), money)
+verificaDataFrameVacio(worksheet, dataFrames[2], shapePositivos[0]+shapeRecaudosV[0]+10, 3, '=Pagos_SAP!B'+str(totales[3]+1), money)
+verificaDataFrameVacio(worksheet, generalSigepItems[2], shapePositivos[0]+shapeRecaudosV[0]+10, 4, '=Egresos_SIGEP!B'+str(totales[4]), money)
 worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+11, 4, '=SS!B'+str(shapeSAP[0]+shapeSIGEP[0]+10), money)
 
 # Close the Pandas Excel writer and output the Excel file.
