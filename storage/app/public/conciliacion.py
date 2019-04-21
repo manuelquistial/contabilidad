@@ -281,7 +281,6 @@ worksheet.write(3, 4, 'SIGEP', merge_bold_color)
 
 cols = positivosRecaudos.columns.tolist()
 shapePositivos = positivosRecaudos.shape
-print(positivosRecaudos)
 if(positivosRecaudos.empty):
     inicial = 6
 else:
