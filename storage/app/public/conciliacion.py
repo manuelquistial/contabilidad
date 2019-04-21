@@ -88,11 +88,11 @@ def verificaDataFrameVacio(worksheet, conciliar, fila, col, dato, tag):
         worksheet.write(fila, col, dato, tag)
 
 currentPattern = [sys.argv[2],sys.argv[3],sys.argv[4]]
-dir = sys.argv[5]+"conciliacion\\"
+dir = sys.argv[5]+"conciliacion/"
 dataFrames = {1:'',2:'',3:''}
 
 for item in currentPattern:
-    currentFile = item.split('\\').pop()
+    currentFile = item.split('/').pop()
     if(str(currentFile).lower() == 'general_sigep_'+sys.argv[6]+'.xlsx'):
         dataFrames[1]= pd.read_excel(dir+currentFile)
     elif(str(currentFile).lower() == 'pagos_sap_'+sys.argv[6]+'.xlsx'):
