@@ -96,7 +96,7 @@ writer = pd.ExcelWriter(sys.argv[4]+'files_out/Reservas_'+str(sys.argv[1])+'_'+s
 ''' ESTILOS '''
 workbook = writer.book
 cell_size = 20
-money = workbook.add_format({'num_format': '#,##'})
+money = workbook.add_format({'num_format': '#,##0'})
 title = workbook.add_format({'fg_color': '#C6E0B4'})
 
 ''' RESERVAS '''
