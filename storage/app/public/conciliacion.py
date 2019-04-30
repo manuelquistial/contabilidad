@@ -5,14 +5,17 @@ import pandas as pd
 import numpy as np
 import sys
 
-def fomulaSSValida(file, cols):
+def fomulaSSValida(original, file, cols):
     for index0, row0 in file.iterrows():
-        suma = 0
+        sumaSS = 0
         salud = 0
+        value = original[cols[0]] == row[cols[0]]
+        value = original[value]
+        suma = value[cols[1]].sum()
         for index1, row1 in file.iterrows():
             if(row0[cols[0]] == row1[cols[0]]):
-                suma = suma + abs(row1[cols[1]])
-        salud = int(round(suma * 0.24023))
+                sumaSS = sumaSS + abs(row1[cols[1]])
+        salud = int(round(sumaSS * 0.24023))
         file.loc[index0, 'SS'] = salud
         file.loc[index0, 'valida'] = abs(row0['Formula']) - (suma + salud)
 
@@ -133,9 +136,9 @@ cols = [cols[7]] + [cols[5]] + cols[0:5]+ [cols[6]] + cols[8:]
 totaDetSap[1] = pagosSap.loc[pagosSap.shape[0]-1,cols[1]]
 pagosSap = pagosSap[cols]
 pagosSap = pagosSap[:-1]
-fecha = pagosSap[cols[5]].dt.strftime('%m/%d/%Y')
+fecha = pd.to_datetime(pagosSap[cols[5]], format = '%m/%d/%Y')
 pagosSap.update(fecha)
-fecha = pagosSap[cols[17]].dt.strftime('%m/%d/%Y')
+fecha = pd.to_datetime(pagosSap[cols[17]], format = '%m/%d/%Y')
 pagosSap.update(fecha)
 pagosSap['Formula'] = 0
 pagosSap['Diferencia'] = 0
@@ -149,9 +152,9 @@ cols = [cols[6]] + [cols[5]] + cols[0:5] + cols[7:]
 totaDetSap[2] = recaudosSap.loc[recaudosSap.shape[0]-1,cols[1]]
 recaudosSap = recaudosSap[cols]
 recaudosSap = recaudosSap[:-1]
-fecha = recaudosSap[cols[5]].dt.strftime('%m/%d/%Y')
+fecha = pd.to_datetime(recaudosSap[cols[5]], format = '%m/%d/%Y')
 recaudosSap.update(fecha)
-fecha = recaudosSap[cols[17]].dt.strftime('%m/%d/%Y')
+fecha = pd.to_datetime(recaudosSap[cols[17]], format = '%m/%d/%Y')
 recaudosSap.update(fecha)
 recaudosSap['Formula'] = 0
 recaudosSap['Diferencia'] = 0
@@ -185,7 +188,7 @@ salarioEps = salarioEps.groupby([cols[0]]).sum()
 salarioEps = salarioEps.reset_index()
 salarioEps = dict.fromkeys(salarioEps[cols[0]], [])
 
-fomulaSSValida(newPagosSap, cols)
+fomulaSSValida(pagosSap, newPagosSap, cols)
 pagosSap.update(newPagosSap)
 
 #seguridad
@@ -317,10 +320,11 @@ for index, row in pagosValidar.iterrows():
     worksheet.write(cont, 4, row[cols[1]], money)
     cont = cont + 1
 
-
 worksheet.merge_range('A'+str(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+14)+':C'+str(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+14), 'Total', merge_bold)
 worksheet.write(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+13, 3, '=D'+str(shapePositivos[0]+shapeRecaudosV[0]+11), money)
-worksheet.write(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+13, 4, '=SUM(E'+str(shapePositivos[0]+shapeRecaudosV[0]+11)+':E'+str(shapePagosValida[0]+shapeRecaudosV[0]+shapePositivos[0]+12)+')', money)
+
+''''jsadkdfalsfjañlsdfkasñl'''''
+worksheet.write(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+13, 4, '=SUM(E'+str(shapePositivos[0]+shapeRecaudosV[0]+11)+':E'+str(shapePositivos[0]+shapeRecaudosV[0]+12)+')+'-'SUM(E'+str(shapePositivos[0]+shapeRecaudosV[0]+13)+':E'+str(shapePagosValida[0]+shapeRecaudosV[0]+shapePositivos[0]+12)+')', money)
 worksheet.merge_range('A'+str(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+15)+':C'+str(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+15), 'Diferencias', merge_bold)
 worksheet.write(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+14, 4, '=D'+str(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+14)+'-E'+str(shapePagosValida[0]+shapePositivos[0]+shapeRecaudosV[0]+14), bold_money)
 
@@ -427,7 +431,7 @@ worksheet = writer.sheets['Conciliación']
 worksheet.merge_range('A5:C5', 'Notas', merge_center)
 worksheet.merge_range('A'+str(shapePositivos[0]+shapeRecaudosV[0]+11)+':C'+str(shapePositivos[0]+shapeRecaudosV[0]+11), 'Notas', merge_center)
 worksheet.merge_range('A'+str(shapePositivos[0]+shapeRecaudosV[0]+12)+':C'+str(shapePositivos[0]+shapeRecaudosV[0]+12), 'Más SS Social Cobrada de Mas al CC', merge_center)
-verificaDataFrameVacio(worksheet, dataFrames[3], 4, 3, '=Recaudos_SAP!B'+str(totales[1]+1), money)
+verificaDataFrameVacio(worksheet, dataFrames[3], 4, 3, '=Recaudos_SAP!B'+str(totales[1]), money)
 verificaDataFrameVacio(worksheet, generalSigepItems[1], 4, 4, '=Ingresos_SIGEP!B'+str(totales[2]), money)
 verificaDataFrameVacio(worksheet, dataFrames[2], shapePositivos[0]+shapeRecaudosV[0]+10, 3, '=Pagos_SAP!B'+str(totales[3]+1), money)
 verificaDataFrameVacio(worksheet, generalSigepItems[2], shapePositivos[0]+shapeRecaudosV[0]+10, 4, '=Egresos_SIGEP!B'+str(totales[4]), money)
