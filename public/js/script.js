@@ -68,9 +68,9 @@ function dataUpload(url, classes){
                 JSON.parse(event.target.responseText).forEach(function (file) {
                     _("downloads").innerHTML += '<div class="card"><div class="card-body"><h5 class="card-title">'+file.split('/').pop()+'</h5><a href="'+window.location.href+'/download?name='+file.split('/').pop()+'" role="button" class="btn btn-outline-danger">Descargar</a></div></div>'
                 });
+                _("upload-boxes-file").innerHTML = '';
                 classes.classList.remove('disabled');
             }catch(e){
-                _("upload-boxes-file").innerHTML = "";
                 classes.classList.remove('disabled');
                 _("downloads").style.display = "inline-flex";
                 _("downloads").innerHTML = '<p id="downloads_text"></p>';
@@ -136,7 +136,6 @@ function completeHandler(event, index) {
         _("status"+index).innerHTML = JSON.parse(event.target.responseText).error;
         _("status"+index).style.color = "#fb505f";
     }else{
-        _("downloads").innerHTML = "";
         _("status"+index).innerHTML = JSON.parse(event.target.responseText).success;
         _("status"+index).style.color = "#4998db";
     }

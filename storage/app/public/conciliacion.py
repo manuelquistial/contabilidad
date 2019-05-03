@@ -36,25 +36,27 @@ def valorFormulaDiferencia(fileOne, fileTwo):
         value = (fileOne[colC[0]] == row[colC[0]]) & (fileOne[colC[6]] == row[colC[6]])
         value = fileOne[value]
         value = abs(value[colC[1]]).sum()
-        fileOne.loc[index, colC[5]] = str(fileOne.loc[index, colC[5]].month)+'/'+str(fileOne.loc[index, colC[5]].day)+'/'+str(fileOne.loc[index, colC[5]].year)
         fileOne.loc[index, 'valida'] = suma - value
 
 def style(item, row, col, worksheet, cont, format, seguridad, negRecaudos, date):
     recaudo_positivo = workbook.add_format({'fg_color':'#FFE699'})
     recaudo_positivo_money = workbook.add_format({'fg_color':'#FFE699', 'num_format': '#,##0'})
+    recaudo_positivo_date = workbook.add_format({'fg_color':'#FFE699', 'num_format': 'mm/dd/yyyy'})
     if(item == 1):
         if(row[col[1]]) > 0:
             worksheet.set_row(cont,None, recaudo_positivo)
             worksheet.write(cont, 1,  row[col[1]], recaudo_positivo_money)
             worksheet.write(cont, len(col)-4, '=SUMAR.SI.CONJUNTO(Ingresos_SIGEP!B:B,Ingresos_SIGEP!A:A,Recaudos_SAP!A'+str(cont+1)+',Ingresos_SIGEP!G:G,Recaudos_SAP!G:G)', recaudo_positivo_money)
             worksheet.write(cont, len(col)-3, '=ABS(B'+str(cont+1)+')-'+xlsxwriter.utility.xl_col_to_name(len(col)-4)+str(cont+1), recaudo_positivo_money)
+            worksheet.write(cont, 5, row[col[5]], recaudo_positivo_date)
+            worksheet.write(cont, 17, row[col[17]], recaudo_positivo_date)
         else:
             negRecaudos.append('B'+str(cont+1))
             worksheet.write(cont, 1,  row[col[1]], format)
             worksheet.write(cont, len(col)-4, '=SUMAR.SI.CONJUNTO(Ingresos_SIGEP!B:B,Ingresos_SIGEP!A:A,Recaudos_SAP!A'+str(cont+1)+',Ingresos_SIGEP!G:G,Recaudos_SAP!G:G)', format)
             worksheet.write(cont, len(col)-3, '=ABS(B'+str(cont+1)+')-'+xlsxwriter.utility.xl_col_to_name(len(col)-4)+str(cont+1), format)
-        worksheet.write(cont, 5, row[col[5]], date)
-        worksheet.write(cont, 17, row[col[17]], date)
+            worksheet.write(cont, 5, row[col[5]], date)
+            worksheet.write(cont, 17, row[col[17]], date)
     elif(item == 2):
         worksheet.write(cont, 11, '=SUMAR.SI.CONJUNTO(Recaudos_SAP!B:B,Recaudos_SAP!A:A,Ingresos_SIGEP!A'+str(cont+1)+',Recaudos_SAP!G:G,Ingresos_SIGEP!G:G)', format)
         worksheet.write(cont, 1, row[col[1]], format)
@@ -76,7 +78,7 @@ def style(item, row, col, worksheet, cont, format, seguridad, negRecaudos, date)
         worksheet.write(cont, 12, '=B'+str(cont+1)+'-L'+str(cont+1), format)
         worksheet.write(cont, 5, row[col[5]], date)
 
-def totalesSheets(worksheet, shapes, format, item, total, negRecaudos):
+def totalesSheets(worksheet, shapes, format, item, total, negRecaudos, col):
     moneyTotalSap = workbook.add_format({'num_format': '#,##', 'fg_color':'#ffff00'})
     if(item == 2) | (item == 4):
         worksheet.write(shapes, 1, '=SUM(B2:B'+str(shapes)+')', format)
@@ -85,14 +87,14 @@ def totalesSheets(worksheet, shapes, format, item, total, negRecaudos):
     elif(item == 3):
         worksheet.write(shapes, 1, total[1], moneyTotalSap)
         worksheet.write(shapes+1, 1, '=SUM(B2:B'+str(shapes)+')', format)
-        worksheet.write(shapes, 24, '=SUM(Y2:Y'+str(shapes)+')', format)
-        worksheet.write(shapes, 25, '=SUM(Z2:Z'+str(shapes)+')', format)
-        worksheet.write(shapes, 26, '=SUM(AA2:AA'+str(shapes)+')', format)
+        worksheet.write(shapes, len(col)-5, '=SUM('+xlsxwriter.utility.xl_col_to_name(len(col)-5)+'2:'+xlsxwriter.utility.xl_col_to_name(len(col)-5)+str(shapes)+')', format)
+        worksheet.write(shapes, len(col)-4, '=SUM('+xlsxwriter.utility.xl_col_to_name(len(col)-4)+'2:'+xlsxwriter.utility.xl_col_to_name(len(col)-4)+str(shapes)+')', format)
+        worksheet.write(shapes, len(col)-3, '=SUM('+xlsxwriter.utility.xl_col_to_name(len(col)-3)+'2:'+xlsxwriter.utility.xl_col_to_name(len(col)-3)+str(shapes)+')', format)
     elif(item == 1):
         worksheet.write(shapes, 1, total[2], moneyTotalSap)
         worksheet.write(shapes+1, 1, '=('+('+'.join(negRecaudos))+')', format)
-        worksheet.write(shapes, 24, '=SUM(Y2:Y'+str(shapes)+')', format)
-        worksheet.write(shapes, 25, '=SUM(Z2:Z'+str(shapes)+')', format)
+        worksheet.write(shapes, len(col)-4, '=SUM('+xlsxwriter.utility.xl_col_to_name(len(col)-4)+'2:'+xlsxwriter.utility.xl_col_to_name(len(col)-4)+str(shapes)+')', format)
+        worksheet.write(shapes, len(col)-3, '=SUM('+xlsxwriter.utility.xl_col_to_name(len(col)-3)+'2:'+xlsxwriter.utility.xl_col_to_name(len(col)-3)+str(shapes)+')', format)
 
 def verificaDataFrameVacio(worksheet, conciliar, fila, col, dato, tag):
     if(conciliar.empty):
@@ -309,6 +311,7 @@ bold_money = workbook.add_format({'bold': 1, 'num_format': '#,##0'})
 money = workbook.add_format({'num_format': '#,##0'})
 title = workbook.add_format({'fg_color': '#C6E0B4'})
 titleConciliacion = workbook.add_format({'bold': 1, 'fg_color': '#FCE4D6'})
+date = workbook.add_format({'num_format': 'mm/dd/yyyy'})
 
 ''' Conciliacion '''
 worksheet = writer.sheets['Conciliación']
@@ -320,11 +323,8 @@ worksheet.write(3, 4, 'SIGEP', merge_bold_color)
 
 cols = positivosRecaudos.columns.tolist()
 shapePositivos = positivosRecaudos.shape
-if(positivosRecaudos.empty):
-    inicial = 6
-else:
-    inicial = 5
-cont = inicial
+
+cont = 5
 for index, row in positivosRecaudos.iterrows():
     worksheet.merge_range('A'+str(cont+1)+':C'+str(cont+1), 'Menos ingreso '+str(int(row[cols[0]]))+' (en positivo no se registra)', merge_center)
     worksheet.write(cont, 3, row[cols[1]], money)
@@ -335,12 +335,16 @@ shapeRecaudosV = recaudosValidar.shape
 cont = shapePositivos[0] + 5
 for index, row in recaudosValidar.iterrows():
     worksheet.merge_range('A'+str(cont+1)+':C'+str(cont+1), int(row[cols[0]]), merge_center)
-    worksheet.write(cont, 4, row[cols[1]], money)
+    worksheet.write(cont, 4, abs(row[cols[1]]), money)
     cont = cont + 1
 
+if(positivosRecaudos.empty):
+    inicial = 6
+else:
+    inicial = 5
 worksheet.merge_range('A'+str(shapePositivos[0]+shapeRecaudosV[0]+7)+':C'+str(shapePositivos[0]+shapeRecaudosV[0]+7), 'Total', merge_bold)
 worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+6, 3, '=D5-SUM(D6:D'+str(shapePositivos[0]+inicial)+')', money)
-worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+6, 4, '=E5-SUM(E'+str(shapePositivos[0]+inicial)+':E'+str(shapePositivos[0]+shapeRecaudosV[0]+inicial)+')', money)
+worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+6, 4, '=E5-SUM(E'+str(shapePositivos[0]+6)+':E'+str(shapePositivos[0]+shapeRecaudosV[0]+inicial)+')', money)
 worksheet.merge_range('A'+str(shapePositivos[0]+shapeRecaudosV[0]+8)+':C'+str(shapePositivos[0]+shapeRecaudosV[0]+8), 'Diferencias', merge_bold)
 worksheet.write(shapePositivos[0]+shapeRecaudosV[0]+7, 4, '=D'+str(shapePositivos[0]+shapeRecaudosV[0]+7)+'-E'+str(shapePositivos[0]+shapeRecaudosV[0]+7), bold_money)
 
@@ -355,9 +359,13 @@ for index, row in pagosValidar.iterrows():
     worksheet.write(cont, 4, row[cols[1]], money)
     cont = cont + 1
 
+if(pagosValidar.empty):
+    pV = 1
+else:
+    pV = 0
 worksheet.merge_range('A'+str(cont+2)+':C'+str(cont+2), 'Total', merge_bold)
 worksheet.write(cont+1, 3, '=D'+str(shapePositivos[0]+shapeRecaudosV[0]+11), money)
-worksheet.write(cont+1, 4, '=SUM(E'+str(shapePositivos[0]+shapeRecaudosV[0]+11)+':E'+str(shapePositivos[0]+shapeRecaudosV[0]+12)+')-SUM(E'+str(shapePositivos[0]+shapeRecaudosV[0]+13)+':E'+str(cont+1)+')', money)
+worksheet.write(cont+1, 4, '=SUM(E'+str(shapePositivos[0]+shapeRecaudosV[0]+11)+':E'+str(shapePositivos[0]+shapeRecaudosV[0]+12)+')-SUM(E'+str(shapePositivos[0]+shapeRecaudosV[0]+13)+':E'+str(cont+pV)+')', money)
 worksheet.merge_range('A'+str(cont+3)+':C'+str(cont+3), 'Diferencias', merge_bold)
 worksheet.write(cont+2, 4, '=D'+str(cont+2)+'-E'+str(cont+2), bold_money)
 
@@ -367,11 +375,22 @@ cols = [cols[0]] + [cols[1]] + cols[4:7] + [cols[9]] + cols[20:22]
 seguridadSap = seguridadSap[cols]
 shapeSAP = seguridadSap.shape
 seguridadSap.to_excel(writer, sheet_name='SS', startrow=1, header=False, index=False)
+
+if(seguridadSap.empty):
+    ssSS = 1
+else:
+    ssSS = 2
+
 worksheet = writer.sheets['SS']
-worksheet.write(shapeSAP[0]+1, 1, '=SUM(B2:B'+str(shapeSAP[0]+1)+')', bold_money)
+worksheet.write(shapeSAP[0]+1, 1, '=SUM(B'+str(ssSS)+':B'+str(shapeSAP[0]+1)+')', bold_money)
 worksheet.write(0, 0, 'SS SAP', bold)
 worksheet.set_column('A:AB', cell_size, None)
 worksheet.set_column('B:B', None, money)
+
+contSS = 1
+for index, row in seguridadSap.iterrows():
+    worksheet.write(contSS, 3, row[cols[3]], date)
+    contSS += 1 
 
 cols = seguridadSigep.columns.tolist()
 seguridadSigep = seguridadSigep[cols[0:11]]
@@ -379,8 +398,17 @@ shapeSIGEP = seguridadSigep.shape
 
 seguridadSigep.to_excel(writer, sheet_name='SS', startrow=shapeSAP[0]+5, header=False, index=False)
 
+contSS = contSS + 4
+for index, row in seguridadSigep.iterrows():
+    worksheet.write(contSS, 5, row[cols[5]], date)
+    contSS += 1 
+
+if(seguridadSigep.empty):
+    ssSI = 5
+else:
+    ssSI = 6
 worksheet = writer.sheets['SS']
-worksheet.write(shapeSAP[0]+shapeSIGEP[0]+5, 1, '=SUM(B'+str(shapeSAP[0]+6)+':B'+str(shapeSAP[0]+shapeSIGEP[0]+5)+')', bold_money)
+worksheet.write(shapeSAP[0]+shapeSIGEP[0]+5, 1, '=SUM(B'+str(shapeSAP[0]+ssSI)+':B'+str(shapeSAP[0]+shapeSIGEP[0]+5)+')', bold_money)
 worksheet.write(shapeSAP[0]+4, 0, 'SS SIGEP', bold)
 
 worksheet.write(shapeSAP[0]+shapeSIGEP[0]+7, 0, 'SAP')
@@ -444,7 +472,9 @@ for item in dataFrames:
             worksheet.set_row(cont,None, ss_info)
             style(item, row, col, worksheet, cont, ss_info_money, salarioEps, posNegRecaudos, ss_info_date)
         cont = cont + 1
-    totalesSheets(worksheet, shapes-1, money, item, totaDetSap, posNegRecaudos)
+    if(dataFrames[item].empty):
+        shapes = 3
+    totalesSheets(worksheet, shapes-1, money, item, totaDetSap, posNegRecaudos, col)
     worksheet.set_row(0, 30, title)
 
 col = dataFrames[3].columns.tolist()

@@ -43,5 +43,5 @@
     <input id="files" type="file" name="file" multiple hidden><br>
 @endsection
 @section('script')
-  <script src="{{ asset('js/script.js') }}" defer></script>
+  <script src="{{ asset('js/script.js') }}?v=1.0" defer></script>
 @endsection
