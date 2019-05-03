@@ -1,5 +1,6 @@
 #!/usr/local/bin/python
 # -*- coding: utf-8 -*-
+from datetime import datetime
 import xlsxwriter
 import pandas as pd
 import numpy as np
@@ -35,6 +36,7 @@ def valorFormulaDiferencia(fileOne, fileTwo):
         value = (fileOne[colC[0]] == row[colC[0]]) & (fileOne[colC[6]] == row[colC[6]])
         value = fileOne[value]
         value = abs(value[colC[1]]).sum()
+        fileOne.loc[index, colC[5]] = str(fileOne.loc[index, colC[5]].month)+'/'+str(fileOne.loc[index, colC[5]].day)+'/'+str(fileOne.loc[index, colC[5]].year)
         fileOne.loc[index, 'valida'] = suma - value
 
 def style(item, row, col, worksheet, cont, format, seguridad, negRecaudos, date):
@@ -56,7 +58,7 @@ def style(item, row, col, worksheet, cont, format, seguridad, negRecaudos, date)
     elif(item == 2):
         worksheet.write(cont, 11, '=SUMAR.SI.CONJUNTO(Recaudos_SAP!B:B,Recaudos_SAP!A:A,Ingresos_SIGEP!A'+str(cont+1)+',Recaudos_SAP!G:G,Ingresos_SIGEP!G:G)', format)
         worksheet.write(cont, 1, row[col[1]], format)
-        worksheet.write(cont, 12, '=B'+str(cont+1)+'-L'+str(cont+1), format)
+        worksheet.write(cont, 12, '=B'+str(cont+1)+'-ABS(L'+str(cont+1)+')', format)
         worksheet.write(cont, 5, row[col[5]], date)
     elif(item == 3):
         worksheet.write(cont, len(col)-5, '=SUMAR.SI.CONJUNTO(Egresos_SIGEP!B:B,Egresos_SIGEP!A:A,Pagos_SAP!A'+str(cont+1)+',Egresos_SIGEP!G:G,Pagos_SAP!G:G)', format)
@@ -98,12 +100,21 @@ def verificaDataFrameVacio(worksheet, conciliar, fila, col, dato, tag):
     else:
         worksheet.write(fila, col, dato, tag)
 
+def uneBancolombia(pago, egreso, colp, cole, rPago, rEgreso):
+    sumP = rPago[colp[1]].sum()
+    sumE = rEgreso[cole[1]].sum()
+    if(sumP == sumE):
+        rPago['valida'] = 0
+        rEgreso['valida'] = 0
+        pago.update(rPago)
+        egreso.update(rEgreso)
+
 currentPattern = [sys.argv[2],sys.argv[3],sys.argv[4]]
-dir = sys.argv[5]+"conciliacion\\"
+dir = sys.argv[5]+"conciliacion/"
 dataFrames = {1:'',2:'',3:''}
 
 for item in currentPattern:
-    currentFile = item.split('\\').pop()
+    currentFile = item.split('/').pop()
     if(str(currentFile).lower() == 'general_sigep_'+sys.argv[6]+'.xlsx'):
         dataFrames[1]= pd.read_excel(dir+currentFile)
     elif(str(currentFile).lower() == 'pagos_sap_'+sys.argv[6]+'.xlsx'):
@@ -176,6 +187,23 @@ valorFormulaDiferencia(generalSigepItems[1], recaudosSap)
 valorFormulaDiferencia(recaudosSap, generalSigepItems[1])
 valorFormulaDiferencia(generalSigepItems[2], pagosSap)
 valorFormulaDiferencia(pagosSap, generalSigepItems[2])
+
+colP = pagosSap.columns.tolist()
+colE = generalSigepItems[2].columns.tolist()
+#UNE EPM PAGOS - EGRESOS
+uneEpm = 'une epm telecomunicaciones'
+uneEpmP = pagosSap.apply(lambda s: uneEpm in str(s[colP[23]]).lower(), axis=1)
+uneEpmP = pagosSap[uneEpmP]
+uneEpmE = generalSigepItems[2].apply(lambda s: uneEpm in str(s[colE[8]]).lower(), axis=1)
+uneEpmE = generalSigepItems[2][uneEpmE]
+uneBancolombia(pagosSap, generalSigepItems[2], colP, colE, uneEpmP, uneEpmE)
+
+#BANCOLOMBIA PAGOS - EGRESOS
+bancolombiaP = pagosSap.apply(lambda s: 'bancolombia s.a.' in str(s[colP[23]]).lower(), axis=1)
+bancolombiaP = pagosSap[bancolombiaP]
+bancolombiaE = generalSigepItems[2].apply(lambda s: 'gastos bancarios' in str(s[colE[9]]).lower(), axis=1)
+bancolombiaE = generalSigepItems[2][bancolombiaE]
+uneBancolombia(pagosSap, generalSigepItems[2], colP, colE, bancolombiaP, bancolombiaE)
 
 #Calculo seguridad
 salario = pagosSap.apply(lambda s: str(s[cols[20]]).lower() == 'salario', axis=1)
@@ -275,7 +303,7 @@ merge_bold_color = workbook.add_format({
     'valign': 'vcenter',
     'fg_color': '#ededed'})
 
-cell_size = 20
+cell_size = 12.5
 bold = workbook.add_format({'bold': 1})
 bold_money = workbook.add_format({'bold': 1, 'num_format': '#,##0'})
 money = workbook.add_format({'num_format': '#,##0'})
@@ -365,8 +393,8 @@ worksheet.write(shapeSAP[0]+shapeSIGEP[0]+9, 1, '=B'+str(shapeSAP[0]+shapeSIGEP[
 for item in sheets:
     if(item % 2) != 0:
         worksheet = writer.sheets[sheets[item]]
-        worksheet.set_column('A:'+xlsxwriter.utility.xl_col_to_name(pagos.shape[1]-2), cell_size, None)
-        worksheet.autofilter('A1:'+xlsxwriter.utility.xl_col_to_name(pagos.shape[1]-2)+'1')
+        worksheet.set_column('A:'+xlsxwriter.utility.xl_col_to_name(pagos.shape[1]-3), cell_size, None)
+        worksheet.autofilter('A1:'+xlsxwriter.utility.xl_col_to_name(pagos.shape[1]-3)+'1')
         worksheet.set_column('C:D', None, None, {'hidden': True})
         worksheet.set_column('H:I', None, None, {'hidden': True})
         worksheet.set_column('K:T', None, None, {'hidden': True})
