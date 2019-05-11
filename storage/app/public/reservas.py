@@ -17,9 +17,9 @@ dataFrames = {1:'',2:''}
 
 for item in currentPattern:
     currentFile = item.split('/').pop()
-    if(str(currentFile) == 'reservas_sap_'+sys.argv[5]+'.xlsx'):
+    if(str(currentFile) == 'reservas_sap_'+str(sys.argv[1])+'_'+sys.argv[5]+'.xlsx'):
         dataFrames[1]= pd.read_excel(dir+currentFile)
-    elif(str(currentFile)== 'reservas_sigep_'+sys.argv[5]+'.xlsx'):
+    elif(str(currentFile)== 'reservas_sigep_'+str(sys.argv[1])+'_'+sys.argv[5]+'.xlsx'):
         dataFrames[2]= pd.read_excel(dir+currentFile)
 
 reservasSap = dataFrames[1]

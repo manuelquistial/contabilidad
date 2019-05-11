@@ -38,7 +38,7 @@ def valorFormulaDiferencia(fileOne, fileTwo):
         value = abs(value[colC[1]]).sum()
         fileOne.loc[index, 'valida'] = suma - value
 
-def style(item, row, col, worksheet, cont, format, seguridad, negRecaudos, date):
+def style(item, row, col, worksheet, cont, format, seguridad, posgrados, posgradosPagos, enPos, negRecaudos, date):
     recaudo_positivo = workbook.add_format({'fg_color':'#FFE699'})
     recaudo_positivo_money = workbook.add_format({'fg_color':'#FFE699', 'num_format': '#,##0'})
     recaudo_positivo_date = workbook.add_format({'fg_color':'#FFE699', 'num_format': 'mm/dd/yyyy'})
@@ -57,6 +57,16 @@ def style(item, row, col, worksheet, cont, format, seguridad, negRecaudos, date)
             worksheet.write(cont, len(col)-3, '=ABS(B'+str(cont+1)+')-'+xlsxwriter.utility.xl_col_to_name(len(col)-4)+str(cont+1), format)
             worksheet.write(cont, 5, row[col[5]], date)
             worksheet.write(cont, 17, row[col[17]], date)
+        
+        if(enPos == True):
+            if(str(row[col[0]]).lower()[0:4] == '4200'):
+                value = posgrados[row[col[0]]]
+                value = value + ['B'+str(cont+1)]
+                posgrados[row[col[0]]] = value
+                if(row[col[1]]) > 0:
+                    worksheet.write(cont, len(col)-3, '', recaudo_positivo_money)
+                else:
+                    worksheet.write(cont, len(col)-3, '', format)
     elif(item == 2):
         worksheet.write(cont, 11, '=SUMAR.SI.CONJUNTO(Recaudos_SAP!B:B,Recaudos_SAP!A:A,Ingresos_SIGEP!A'+str(cont+1)+',Recaudos_SAP!G:G,Ingresos_SIGEP!G:G)', format)
         worksheet.write(cont, 1, row[col[1]], format)
@@ -72,13 +82,20 @@ def style(item, row, col, worksheet, cont, format, seguridad, negRecaudos, date)
             value = seguridad[row[col[0]]]
             value = value + ['B'+str(cont+1)]
             seguridad[row[col[0]]] = value
+        if(enPos == True):
+            if(str(row[col[0]]).lower()[0:4] == '4200'):
+                if(posgradosPagos.get(row[col[0]],None) != None):
+                    print('hola')
+                    value = posgradosPagos[row[col[0]]]
+                    value = value + ['B'+str(cont+1)]
+                    posgradosPagos[row[col[0]]] = value
     elif(item == 4):
         worksheet.write(cont, 11, '=SUMAR.SI.CONJUNTO(Pagos_SAP!B:B,Pagos_SAP!A:A,Egresos_SIGEP!A'+str(cont+1)+',Pagos_SAP!G:G,Egresos_SIGEP!G:G)', format)
         worksheet.write(cont, 1, row[col[1]], format)
         worksheet.write(cont, 12, '=B'+str(cont+1)+'-L'+str(cont+1), format)
         worksheet.write(cont, 5, row[col[5]], date)
 
-def totalesSheets(worksheet, shapes, format, item, total, negRecaudos, col):
+def totalesSheets(worksheet, shapes, format, item, total, negRecaudos, col, enPos):
     moneyTotalSap = workbook.add_format({'num_format': '#,##', 'fg_color':'#ffff00'})
     if(item == 2) | (item == 4):
         worksheet.write(shapes, 1, '=SUM(B2:B'+str(shapes)+')', format)
@@ -93,6 +110,11 @@ def totalesSheets(worksheet, shapes, format, item, total, negRecaudos, col):
     elif(item == 1):
         worksheet.write(shapes, 1, total[2], moneyTotalSap)
         worksheet.write(shapes+1, 1, '=('+('+'.join(negRecaudos))+')', format)
+        if(enPos == True):
+            worksheet.write(shapes, len(col)-8, '=SUM('+xlsxwriter.utility.xl_col_to_name(len(col)-8)+'2:'+xlsxwriter.utility.xl_col_to_name(len(col)-8)+str(shapes)+')', format)
+            worksheet.write(shapes, len(col)-7, '=SUM('+xlsxwriter.utility.xl_col_to_name(len(col)-7)+'2:'+xlsxwriter.utility.xl_col_to_name(len(col)-7)+str(shapes)+')', format)
+            worksheet.write(shapes, len(col)-6, '=SUM('+xlsxwriter.utility.xl_col_to_name(len(col)-6)+'2:'+xlsxwriter.utility.xl_col_to_name(len(col)-6)+str(shapes)+')', format)
+            worksheet.write(shapes, len(col)-5, '=SUM('+xlsxwriter.utility.xl_col_to_name(len(col)-5)+'2:'+xlsxwriter.utility.xl_col_to_name(len(col)-5)+str(shapes)+')', format)
         worksheet.write(shapes, len(col)-4, '=SUM('+xlsxwriter.utility.xl_col_to_name(len(col)-4)+'2:'+xlsxwriter.utility.xl_col_to_name(len(col)-4)+str(shapes)+')', format)
         worksheet.write(shapes, len(col)-3, '=SUM('+xlsxwriter.utility.xl_col_to_name(len(col)-3)+'2:'+xlsxwriter.utility.xl_col_to_name(len(col)-3)+str(shapes)+')', format)
 
@@ -112,21 +134,22 @@ def uneBancolombia(pago, egreso, colp, cole, rPago, rEgreso):
         egreso.update(rEgreso)
 
 currentPattern = [sys.argv[2],sys.argv[3],sys.argv[4]]
-dir = sys.argv[5]+"conciliacion/"
+dir = sys.argv[5]+"conciliacion\\"
 dataFrames = {1:'',2:'',3:''}
 
 for item in currentPattern:
-    currentFile = item.split('/').pop()
-    if(str(currentFile).lower() == 'general_sigep_'+sys.argv[6]+'.xlsx'):
+    currentFile = item.split('\\').pop()
+    if(str(currentFile).lower() == 'general_sigep_'+str(sys.argv[1])+'_'+sys.argv[6]+'.xlsx'):
         dataFrames[1]= pd.read_excel(dir+currentFile)
-    elif(str(currentFile).lower() == 'pagos_sap_'+sys.argv[6]+'.xlsx'):
+    elif(str(currentFile).lower() == 'pagos_sap_'+str(sys.argv[1])+'_'+sys.argv[6]+'.xlsx'):
         dataFrames[2]= pd.read_excel(dir+currentFile)
-    elif(str(currentFile).lower() == 'recaudos_sap_'+sys.argv[6]+'.xlsx'):
+    elif(str(currentFile).lower() == 'recaudos_sap_'+str(sys.argv[1])+'_'+sys.argv[6]+'.xlsx'):
         dataFrames[3]= pd.read_excel(dir+currentFile)
 
 generalSigep = dataFrames[1]
 pagosSap = dataFrames[2]
-recaudosSap = dataFrames[3]
+colRS = dataFrames[3].columns.tolist()
+recaudosSap = dataFrames[3].sort_values(by=[colRS[0]])
 
 #generalSigep
 generalSigepItems = {1:'',2:''}
@@ -162,11 +185,18 @@ pagosSap['Observaciones'] = 0
 pagosSap['valida'] = 0
 
 #recaudosSap
+enablePos = False
 cols = recaudosSap.columns.tolist()
 cols = [cols[6]] + [cols[5]] + cols[0:5] + cols[7:]
 totaDetSap[2] = recaudosSap.loc[recaudosSap.shape[0]-1,cols[1]]
 recaudosSap = recaudosSap[cols]
 recaudosSap = recaudosSap[:-1]
+if(str(sys.argv[1]) == '21930003'):
+    enablePos = True
+    recaudosSap['Total Ingresos'] = 0
+    recaudosSap['% Ingreso Sigep_66,667%'] = 0
+    recaudosSap['Pendiente registrar en proyecto ingresos_33,33%'] = 0
+    recaudosSap['Deducciones'] = 0
 recaudosSap['Formula'] = 0
 recaudosSap['Diferencia'] = 0
 recaudosSap['Observaciones'] = 0
@@ -175,6 +205,8 @@ recaudosSap['valida'] = 0
 #pagosSap
 cols = pagosSap.columns.tolist()
 nanValues = pagosSap.apply(lambda s: str(s[cols[0]]).lower() == 'nan', axis=1)
+pagosPosSap = pagosSap.apply(lambda s: str(s[cols[4]]).lower()[0:4] == '4200', axis=1)
+pagosPosSap = pagosSap[pagosPosSap]
 newPagosSap = pagosSap[nanValues]
 for index, row in newPagosSap.iterrows():
     val = str(row[cols[4]])
@@ -184,11 +216,28 @@ for index, row in newPagosSap.iterrows():
         newPagosSap.loc[index,cols[0]] = int(row[cols[2]])
 pagosSap.update(newPagosSap)
 
+for index, row in pagosPosSap.iterrows():
+    pagosPosSap.loc[index,cols[0]] = int(row[cols[4]])
+pagosSap.update(pagosPosSap)
+
 #Formula y diferencia
 valorFormulaDiferencia(generalSigepItems[1], recaudosSap)
 valorFormulaDiferencia(recaudosSap, generalSigepItems[1])
 valorFormulaDiferencia(generalSigepItems[2], pagosSap)
 valorFormulaDiferencia(pagosSap, generalSigepItems[2])
+
+#Calculos CC 21930003 POSGRADOS
+cols = recaudosSap.columns.tolist()
+ccPosgrados = recaudosSap.apply(lambda s: str(s[cols[0]]).lower()[0:4] == '4200', axis=1)
+ccPosgrados = recaudosSap[ccPosgrados]
+ccPosgrados['valida'] = 0
+recaudosSap.update(ccPosgrados)
+
+ccPosgrados = ccPosgrados[[cols[0]] + [cols[1]]]
+ccPosgrados = ccPosgrados.groupby([cols[0]]).sum()
+ccPosgrados = ccPosgrados.reset_index()
+ccPosgrados = dict.fromkeys(ccPosgrados[cols[0]], [])
+ccPosgradosPagos = ccPosgrados
 
 colP = pagosSap.columns.tolist()
 colE = generalSigepItems[2].columns.tolist()
@@ -208,6 +257,7 @@ bancolombiaE = generalSigepItems[2][bancolombiaE]
 uneBancolombia(pagosSap, generalSigepItems[2], colP, colE, bancolombiaP, bancolombiaE)
 
 #Calculo seguridad
+cols = pagosSap.columns.tolist()
 salario = pagosSap.apply(lambda s: str(s[cols[20]]).lower() == 'salario', axis=1)
 newPagosSap = pagosSap[salario]
 
@@ -421,8 +471,11 @@ worksheet.write(shapeSAP[0]+shapeSIGEP[0]+9, 1, '=B'+str(shapeSAP[0]+shapeSIGEP[
 for item in sheets:
     if(item % 2) != 0:
         worksheet = writer.sheets[sheets[item]]
-        worksheet.set_column('A:'+xlsxwriter.utility.xl_col_to_name(pagos.shape[1]-3), cell_size, None)
-        worksheet.autofilter('A1:'+xlsxwriter.utility.xl_col_to_name(pagos.shape[1]-3)+'1')
+        if(item == 1):
+            worksheet.set_column('A:'+xlsxwriter.utility.xl_col_to_name(recaudos.shape[1]-1), cell_size, None)
+            worksheet.autofilter('A1:'+xlsxwriter.utility.xl_col_to_name(recaudos.shape[1]-1)+'1')
+        worksheet.set_column('A:'+xlsxwriter.utility.xl_col_to_name(pagos.shape[1]-2), cell_size, None)
+        worksheet.autofilter('A1:'+xlsxwriter.utility.xl_col_to_name(pagos.shape[1]-2)+'1')
         worksheet.set_column('C:D', None, None, {'hidden': True})
         worksheet.set_column('H:I', None, None, {'hidden': True})
         worksheet.set_column('K:T', None, None, {'hidden': True})
@@ -463,20 +516,21 @@ for item in dataFrames:
     for index, row in dataFrames[item].iterrows():
         if (row['valida'] == 0) | (row['Diferencia'] == 0):
             worksheet.set_row(cont,None,correct_info)
-            style(item, row, col, worksheet, cont, correct_info_money, salarioEps, posNegRecaudos, correct_info_date)
+            style(item, row, col, worksheet, cont, correct_info_money, salarioEps, ccPosgrados, ccPosgradosPagos, enablePos, posNegRecaudos, correct_info_date)
         else:
             worksheet.set_row(cont,None, wrong_info)
-            style(item, row, col, worksheet, cont, wrong_info_money, salarioEps, posNegRecaudos, wrong_info_date)
+            style(item, row, col, worksheet, cont, wrong_info_money, salarioEps, ccPosgrados, ccPosgradosPagos, enablePos, posNegRecaudos, wrong_info_date)
 
         if (str(row[col[4]]).lower()[0:6] == 'automn') | (str(row[col[9]]).lower()[0:2] == 'ss'):
             worksheet.set_row(cont,None, ss_info)
-            style(item, row, col, worksheet, cont, ss_info_money, salarioEps, posNegRecaudos, ss_info_date)
+            style(item, row, col, worksheet, cont, ss_info_money, salarioEps, ccPosgrados, ccPosgradosPagos, enablePos, posNegRecaudos, ss_info_date)
         cont = cont + 1
     if(dataFrames[item].empty):
         shapes = 3
-    totalesSheets(worksheet, shapes-1, money, item, totaDetSap, posNegRecaudos, col)
+    totalesSheets(worksheet, shapes-1, money, item, totaDetSap, posNegRecaudos, col, enablePos)
     worksheet.set_row(0, 30, title)
 
+#Formato en excel para calculo de salud en pagos sap
 col = dataFrames[3].columns.tolist()
 worksheet = writer.sheets[sheets[3]]
 salud = workbook.add_format({'num_format': '#,##0'})
@@ -489,6 +543,32 @@ for index, row in dataFrames[3].iterrows():
         else:
             worksheet.write(cont, len(col)-3, '=('+('+'.join(value))+')*24.023%', wrong_info_money)  
     cont = cont + 1
+
+#Formato en excel para calculo de porcentajes en recaudos sap
+if(enablePos == True):
+    col = dataFrames[1].columns.tolist()
+    worksheet = writer.sheets[sheets[1]]
+    formato = workbook.add_format({'num_format': '#,##0'})
+    cont = 1
+    rowCont = 0
+    anterior = 0
+    for index, row in dataFrames[1].iterrows():
+        if(str(row[col[0]]).lower()[0:4] == '4200'):
+            if(row[col[0]] != anterior):
+                rowCont = 1
+            else:
+                rowCont = 0
+
+            if(rowCont == 1):
+                value = ccPosgrados[row[col[0]]]
+                worksheet.write(cont, len(col)-8, '=('+('+'.join(value))+')', correct_info_money)
+                worksheet.write(cont, len(col)-7, '=('+xlsxwriter.utility.xl_col_to_name(len(col)-8)+str(cont+1)+')*66.67%', correct_info_money)   
+                worksheet.write(cont, len(col)-6, '=('+xlsxwriter.utility.xl_col_to_name(len(col)-8)+str(cont+1)+'-'+xlsxwriter.utility.xl_col_to_name(len(col)-7)+str(cont+1)+')', correct_info_money)
+                worksheet.write(cont, len(col)-5, '=Pagos_SAP!'+ccPosgradosPagos[row[col[0]]][0], correct_info_money)
+                rowCont = 0
+            anterior = row[col[0]]
+        cont = cont + 1
+        
 
 ''' TOTALES EN CONCILIACION'''
 worksheet = writer.sheets['Conciliación']

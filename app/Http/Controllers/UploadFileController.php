@@ -33,7 +33,7 @@ class UploadFileController extends Controller
       ]);
       $userId = Auth::id();
       $value = request()->num;
-      $files = glob(storage_path('app/public/files/reservas')."/*".$userId.".{xlsx,XLSX}", GLOB_BRACE);
+      $files = glob(storage_path('app/public/files/reservas')."/*".$value."_".$userId.".{xlsx,XLSX}", GLOB_BRACE);
       if(empty($files) || (count($files) != 2)){
         return response()->json(['empty'=>'No existen los documentos necesarios para realizar reservas', 'files'=>json_encode($files)]);
       }else{
@@ -44,7 +44,7 @@ class UploadFileController extends Controller
           return response()->json(['error'=>'Error en la ejecucion del programa de reservas.']);
         }else{
           FILE::delete($files);
-          $data = glob(storage_path('app/public/files/').'files_out/*'.$userId.'.xlsx');
+          $data = glob(storage_path('app/public/files/').'files_out/*'.$value."_".$userId.'.xlsx');
           return json_encode($data);
         }
       }
@@ -62,7 +62,7 @@ class UploadFileController extends Controller
         ]);
         $userId = Auth::id();
         $value = request()->num;
-        $files = glob(storage_path('app/public/files/conciliacion')."/*".$userId.".{xlsx,XLSX}", GLOB_BRACE);
+        $files = glob(storage_path('app/public/files/conciliacion')."/*".$value."_".$userId.".{xlsx,XLSX}", GLOB_BRACE);
         if(empty($files) || (count($files) != 3)){
           return response()->json(['empty'=>'No existen los documentos necesarios para conciliar', 'files'=>json_encode($files)]);
         }else{
@@ -73,7 +73,7 @@ class UploadFileController extends Controller
             return response()->json(['error'=>'Error en la ejecucion del programa de conciliacion.']);
           }else{
             FILE::delete($files);
-            $data = glob(storage_path('app/public/files/').'files_out/*'.$userId.'.xlsx');
+            $data = glob(storage_path('app/public/files/').'files_out/*'.$value."_".$userId.'.xlsx');
             return json_encode($data);
           }
         }
