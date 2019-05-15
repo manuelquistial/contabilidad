@@ -38,23 +38,23 @@ def valorFormulaDiferencia(fileOne, fileTwo):
         value = abs(value[colC[1]]).sum()
         fileOne.loc[index, 'valida'] = suma - value
 
-def style(item, row, col, worksheet, cont, format, seguridad, posgrados, posgradosPagos, enPos, negRecaudos, date):
+def style(item, row, col, worksheet, cont, format, seguridad, posgrados, posgradosPagos, enPos, negRecaudos, date, normal_valor):
     recaudo_positivo = workbook.add_format({'fg_color':'#FFE699'})
-    recaudo_positivo_money = workbook.add_format({'fg_color':'#FFE699', 'num_format': '#,##0'})
-    recaudo_positivo_date = workbook.add_format({'fg_color':'#FFE699', 'num_format': 'mm/dd/yyyy'})
     if(item == 1):
         if(row[col[1]]) > 0:
             worksheet.set_row(cont,None, recaudo_positivo)
-            worksheet.write(cont, 1,  row[col[1]], recaudo_positivo_money)
-            worksheet.write(cont, len(col)-4, '=SUMAR.SI.CONJUNTO(Ingresos_SIGEP!B:B,Ingresos_SIGEP!A:A,Recaudos_SAP!A'+str(cont+1)+',Ingresos_SIGEP!G:G,Recaudos_SAP!G:G)', recaudo_positivo_money)
-            worksheet.write(cont, len(col)-3, '=ABS(B'+str(cont+1)+')-'+xlsxwriter.utility.xl_col_to_name(len(col)-4)+str(cont+1), recaudo_positivo_money)
-            worksheet.write(cont, 5, row[col[5]], recaudo_positivo_date)
-            worksheet.write(cont, 17, row[col[17]], recaudo_positivo_date)
+            worksheet.write(cont, 1,  row[col[1]], recaudo_positivo.set_num_format('#,##0'))
+            worksheet.write(cont, len(col)-4, '=SUMAR.SI.CONJUNTO(Ingresos_SIGEP!B:B,Ingresos_SIGEP!A:A,Recaudos_SAP!A'+str(cont+1)+',Ingresos_SIGEP!G:G,Recaudos_SAP!G:G)', recaudo_positivo.set_num_format('#,##0'))
+            worksheet.write(cont, len(col)-3, '=ABS(B'+str(cont+1)+')-'+xlsxwriter.utility.xl_col_to_name(len(col)-4)+str(cont+1), recaudo_positivo.set_num_format('#,##0'))
+            worksheet.write(cont, 4, int(row[col[4]]), normal_valor)
+            worksheet.write(cont, 5, row[col[5]], recaudo_positivo.set_num_format('mm/dd/yyyy'))
+            worksheet.write(cont, 17, row[col[17]], recaudo_positivo.set_num_format('mm/dd/yyyy'))
         else:
             negRecaudos.append('B'+str(cont+1))
             worksheet.write(cont, 1,  row[col[1]], format)
             worksheet.write(cont, len(col)-4, '=SUMAR.SI.CONJUNTO(Ingresos_SIGEP!B:B,Ingresos_SIGEP!A:A,Recaudos_SAP!A'+str(cont+1)+',Ingresos_SIGEP!G:G,Recaudos_SAP!G:G)', format)
             worksheet.write(cont, len(col)-3, '=ABS(B'+str(cont+1)+')-'+xlsxwriter.utility.xl_col_to_name(len(col)-4)+str(cont+1), format)
+            worksheet.write(cont, 4, int(row[col[4]]), normal_valor)
             worksheet.write(cont, 5, row[col[5]], date)
             worksheet.write(cont, 17, row[col[17]], date)
         
@@ -65,9 +65,8 @@ def style(item, row, col, worksheet, cont, format, seguridad, posgrados, posgrad
                     valueP = posgrados[row[col[0]]]
                     valueP = valueP + ['B'+str(cont+1)]
                     posgrados[row[col[0]]] = valueP
-                    print(valueP)
                     if(row[col[1]]) > 0:
-                        worksheet.write(cont, len(col)-3, '', recaudo_positivo_money)
+                        worksheet.write(cont, len(col)-3, '', recaudo_positivo.set_num_format('#,##0'))
                     else:
                         worksheet.write(cont, len(col)-3, '', format)
     elif(item == 2):
@@ -210,9 +209,6 @@ recaudosSap['valida'] = 0
 #pagosSap
 cols = pagosSap.columns.tolist()
 nanValues = pagosSap.apply(lambda s: str(s[cols[0]]).lower() == 'nan', axis=1)
-pagosPosSap = pagosSap.apply(lambda s: str(s[cols[4]]).lower()[0:4] == '4200', axis=1)
-totalPosgradosPagos = abs(pagosPosSap[cols[1]]).sum()
-pagosPosSap = pagosSap[pagosPosSap]
 newPagosSap = pagosSap[nanValues]
 for index, row in newPagosSap.iterrows():
     val = str(row[cols[4]])
@@ -222,18 +218,46 @@ for index, row in newPagosSap.iterrows():
         newPagosSap.loc[index,cols[0]] = int(row[cols[2]])
 pagosSap.update(newPagosSap)
 
-for index, row in pagosPosSap.iterrows():
-    pagosPosSap.loc[index,cols[0]] = int(row[cols[4]])
-pagosSap.update(pagosPosSap)
-
 #Formula y diferencia
 valorFormulaDiferencia(generalSigepItems[1], recaudosSap)
 valorFormulaDiferencia(recaudosSap, generalSigepItems[1])
 valorFormulaDiferencia(generalSigepItems[2], pagosSap)
 valorFormulaDiferencia(pagosSap, generalSigepItems[2])
 
+ccPosgrados = dict()
+ccPosgradosPagos = dict()
 #Calculos CC 21930003 POSGRADOS
 if(enablePos == True):
+    principal = -1
+
+    colI = generalSigepItems[1].columns.tolist()
+    ccPSigep = generalSigepItems[1].apply(lambda s: str(s[colI[0]]).lower()[0:4] == '4200', axis=1)
+    ccPSigep = generalSigepItems[1][ccPSigep]
+    ccPSigep = ccPSigep[ccPSigep[colI[0]].duplicated() == True]
+    if(~ccPSigep.empty):
+        if(ccPSigep.shape[0] == 1):
+            principal = ccPSigep.iloc[0][colI[0]]
+
+    cols = pagosSap.columns.tolist()
+    pagosPosSap = pagosSap.apply(lambda s: (str(s[cols[4]]).lower()[0:4] == '4200') | (str(s[cols[4]]).lower()[0:4] == '5300'), axis=1)
+    pagosPosSapD = pagosSap[pagosPosSap]
+    for index, row in pagosPosSapD.iterrows():
+        pagosPosSapD.loc[index,cols[0]] = int(row[cols[4]])
+    pagosSap.update(pagosPosSapD)
+
+    pagosPosSap = pagosSap.apply(lambda s: str(s[cols[4]]).lower()[0:4] == '4200', axis=1)
+    pagosPosSap = pagosSap[pagosPosSap]
+    totalPosgradosPagos = abs(pagosPosSap[cols[1]]).sum()
+    prinEgre = generalSigepItems[2][colI[0]] == principal
+    prinEgre = generalSigepItems[2][prinEgre]
+    if(~prinEgre.empty):
+        if(prinEgre.shape[0] == 1):
+            if(prinEgre.iloc[0][colI[1]] == totalPosgradosPagos):
+                pagosPosSap['valida'] = 0
+                prinEgre['valida'] = 0
+                generalSigepItems[2].update(prinEgre)
+                pagosSap.update(pagosPosSap)
+
     cols = recaudosSap.columns.tolist()
     ccPosgradosC = recaudosSap.apply(lambda s: str(s[cols[0]]).lower()[0:4] == '4200', axis=1)
     ccPosgradosC = recaudosSap[ccPosgradosC]
@@ -244,17 +268,18 @@ if(enablePos == True):
     ccPosgrados = dict.fromkeys(ccPosgradosF[cols[0]], [])
     ccPosgradosPagos = dict.fromkeys(ccPosgradosF[cols[0]], [])
 
-    colI = generalSigepItems[1].columns.tolist()
     for item in ccPosgrados:
         valueR = ccPosgradosC[cols[0]] == item
         valueI = generalSigepItems[1][colI[0]] == item
         valueR = ccPosgradosC[valueR]
         valueI = generalSigepItems[1][valueI]
-        sumaR = abs(valueR[cols[1]]).sum() #FALTA PORCENTAJE
-        sumaI = abs(valueI[colI[1]]).sum()
+        sumaR = int(round(abs(valueR[cols[1]]).sum()*0.6667))  #FALTA PORCENTAJE
+        sumaI = int(abs(valueI[colI[1]]).sum())
         if(sumaR == sumaI):
             valueR['valida'] = 0
+            valueI['valida'] = 0
             recaudosSap.update(valueR)
+            generalSigepItems[1].update(valueI)
 
 colP = pagosSap.columns.tolist()
 colE = generalSigepItems[2].columns.tolist()
@@ -489,10 +514,15 @@ for item in sheets:
     if(item % 2) != 0:
         worksheet = writer.sheets[sheets[item]]
         if(item == 1):
-            worksheet.set_column('A:'+xlsxwriter.utility.xl_col_to_name(recaudos.shape[1]-1), cell_size, None)
-            worksheet.autofilter('A1:'+xlsxwriter.utility.xl_col_to_name(recaudos.shape[1]-1)+'1')
-        worksheet.set_column('A:'+xlsxwriter.utility.xl_col_to_name(pagos.shape[1]-2), cell_size, None)
-        worksheet.autofilter('A1:'+xlsxwriter.utility.xl_col_to_name(pagos.shape[1]-2)+'1')
+            if(enablePos == True):
+                worksheet.set_column('A:'+xlsxwriter.utility.xl_col_to_name(recaudos.shape[1]+2), cell_size, None)
+                worksheet.autofilter('A1:'+xlsxwriter.utility.xl_col_to_name(recaudos.shape[1]+2)+'1')
+            else:
+                worksheet.set_column('A:'+xlsxwriter.utility.xl_col_to_name(recaudos.shape[1]-1), cell_size, None)
+                worksheet.autofilter('A1:'+xlsxwriter.utility.xl_col_to_name(recaudos.shape[1]-1)+'1')
+        else:
+            worksheet.set_column('A:'+xlsxwriter.utility.xl_col_to_name(pagos.shape[1]-2), cell_size, None)
+            worksheet.autofilter('A1:'+xlsxwriter.utility.xl_col_to_name(pagos.shape[1]-2)+'1')
         worksheet.set_column('C:D', None, None, {'hidden': True})
         worksheet.set_column('H:I', None, None, {'hidden': True})
         worksheet.set_column('K:T', None, None, {'hidden': True})
@@ -506,15 +536,16 @@ for item in sheets:
 
 correct_info = workbook.add_format({'fg_color': '#C6E0B4'})
 correct_info_money = workbook.add_format({'fg_color': '#C6E0B4', 'num_format': '#,##0'})
-ss_info  = workbook.add_format({'fg_color': '#FFFF00'})
-ss_info_money  = workbook.add_format({'fg_color': '#FFFF00', 'num_format': '#,##0'})
-wrong_info  = workbook.add_format({'fg_color': '#F8CBAD'})
-wrong_info_money  = workbook.add_format({'fg_color': '#F8CBAD', 'num_format': '#,##0'})
+ss_info = workbook.add_format({'fg_color': '#FFFF00'})
+ss_info_money = workbook.add_format({'fg_color': '#FFFF00', 'num_format': '#,##0'})
+wrong_info = workbook.add_format({'fg_color': '#F8CBAD'})
+wrong_info_money = workbook.add_format({'fg_color': '#F8CBAD', 'num_format': '#,##0'})
 correct_info_date = workbook.add_format({'fg_color': '#C6E0B4', 'num_format': 'mm/dd/yyyy'})
-ss_info_date  = workbook.add_format({'fg_color': '#FFFF00', 'num_format': 'mm/dd/yyyy'})
-wrong_info_date  = workbook.add_format({'fg_color': '#F8CBAD', 'num_format': 'mm/dd/yyyy'})
-deducciones_color  = workbook.add_format({'fg_color': '#bdd7ee', 'num_format': '#,##0'})
-
+ss_info_date = workbook.add_format({'fg_color': '#FFFF00', 'num_format': 'mm/dd/yyyy'})
+wrong_info_date = workbook.add_format({'fg_color': '#F8CBAD', 'num_format': 'mm/dd/yyyy'})
+deducciones_color = workbook.add_format({'fg_color': '#bdd7ee', 'num_format': '#,##0'})
+correct_normal_format = workbook.add_format({'fg_color': '#C6E0B4', 'num_format': '###'})
+wrong_normal_format = workbook.add_format({'fg_color': '#F8CBAD', 'num_format': '###'})
 ''' ESTILO DE RECAUDOS - INGRESOS- PAGOS - EGRESOS '''
 dataFrames = {1:'',2:'',3:'',4:''}
 dataFrames[1] = recaudos
@@ -534,14 +565,14 @@ for item in dataFrames:
     for index, row in dataFrames[item].iterrows():
         if (row['valida'] == 0) | (row['Diferencia'] == 0):
             worksheet.set_row(cont,None,correct_info)
-            style(item, row, col, worksheet, cont, correct_info_money, salarioEps, ccPosgrados, ccPosgradosPagos, enablePos, posNegRecaudos, correct_info_date)
+            style(item, row, col, worksheet, cont, correct_info_money, salarioEps, ccPosgrados, ccPosgradosPagos, enablePos, posNegRecaudos, correct_info_date, correct_normal_format)
         else:
             worksheet.set_row(cont,None, wrong_info)
-            style(item, row, col, worksheet, cont, wrong_info_money, salarioEps, ccPosgrados, ccPosgradosPagos, enablePos, posNegRecaudos, wrong_info_date)
+            style(item, row, col, worksheet, cont, wrong_info_money, salarioEps, ccPosgrados, ccPosgradosPagos, enablePos, posNegRecaudos, wrong_info_date, wrong_normal_format)
 
         if (str(row[col[4]]).lower()[0:6] == 'automn') | (str(row[col[9]]).lower()[0:2] == 'ss'):
             worksheet.set_row(cont,None, ss_info)
-            style(item, row, col, worksheet, cont, ss_info_money, salarioEps, ccPosgrados, ccPosgradosPagos, enablePos, posNegRecaudos, ss_info_date)
+            style(item, row, col, worksheet, cont, ss_info_money, salarioEps, ccPosgrados, ccPosgradosPagos, enablePos, posNegRecaudos, ss_info_date, None)
         cont = cont + 1
     if(dataFrames[item].empty):
         shapes = 3
@@ -575,16 +606,23 @@ if(enablePos == True):
             if(row[col[0]] != anterior):
                 rowCont = 1
             else:
+                worksheet.write(cont, len(col)-5, 0, deducciones_color)
                 rowCont = 0
 
             if(rowCont == 1):
                 valueCCP = ccPosgrados[row[col[0]]]
-                valueCCPP = ('=Pagos_SAP!'+ccPosgradosPagos[row[col[0]]][0]) if(ccPosgradosPagos[row[col[0]]][:] != []) else 0
-                worksheet.write(cont, len(col)-8, '=('+('+'.join(valueCCP))+')', correct_info_money)
-                worksheet.write(cont, len(col)-7, '=('+xlsxwriter.utility.xl_col_to_name(len(col)-8)+str(cont+1)+')*66.67%', correct_info_money)   
-                worksheet.write(cont, len(col)-6, '=('+xlsxwriter.utility.xl_col_to_name(len(col)-8)+str(cont+1)+'-'+xlsxwriter.utility.xl_col_to_name(len(col)-7)+str(cont+1)+')', correct_info_money)
-                worksheet.write(cont, len(col)-5, valueCCPP, deducciones_color)
+                if (row['valida'] == 0):
+                    worksheet.write(cont, len(col)-8, '=abs('+('+'.join(valueCCP))+')', correct_info_money)
+                    worksheet.write(cont, len(col)-7, '=('+xlsxwriter.utility.xl_col_to_name(len(col)-8)+str(cont+1)+')*66.67%', correct_info_money)   
+                    worksheet.write(cont, len(col)-6, '=('+xlsxwriter.utility.xl_col_to_name(len(col)-8)+str(cont+1)+'-'+xlsxwriter.utility.xl_col_to_name(len(col)-7)+str(cont+1)+')', correct_info_money)
+                else:
+                    worksheet.write(cont, len(col)-8, '=abs('+('+'.join(valueCCP))+')', wrong_info_money)
+                    worksheet.write(cont, len(col)-7, '=('+xlsxwriter.utility.xl_col_to_name(len(col)-8)+str(cont+1)+')*66.67%', wrong_info_money)   
+                    worksheet.write(cont, len(col)-6, '=('+xlsxwriter.utility.xl_col_to_name(len(col)-8)+str(cont+1)+'-'+xlsxwriter.utility.xl_col_to_name(len(col)-7)+str(cont+1)+')', wrong_info_money)
                 rowCont = 0
+
+                valueCCPP = ('=Pagos_SAP!'+ccPosgradosPagos[row[col[0]]][0]) if(ccPosgradosPagos[row[col[0]]][:] != []) else 0
+                worksheet.write(cont, len(col)-5, valueCCPP, deducciones_color)
             anterior = row[col[0]]
         cont = cont + 1
         
