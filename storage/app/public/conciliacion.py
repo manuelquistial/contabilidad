@@ -564,7 +564,7 @@ for item in dataFrames:
     cont = 1
     for index, row in dataFrames[item].iterrows():
         if (row['valida'] == 0) | (row['Diferencia'] == 0):
-            worksheet.set_row(cont,None,correct_info)
+            worksheet.set_row(cont,None, correct_info)
             style(item, row, col, worksheet, cont, correct_info_money, salarioEps, ccPosgrados, ccPosgradosPagos, enablePos, posNegRecaudos, correct_info_date, correct_normal_format)
         else:
             worksheet.set_row(cont,None, wrong_info)

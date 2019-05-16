@@ -4,25 +4,20 @@ import pandas as pd
 import numpy as np
 import sys
 
-def styleReservas(item, row, col, worksheet, cont, format):
-    if(item == 1):
-        worksheet.write(cont, 5, row[col[5]], format)
-    elif(item == 2):
-        worksheet.write(cont, 1, row[col[1]], format)
-
 currentPattern = [sys.argv[2],sys.argv[3]]
-dir = sys.argv[4]+"reservas/"
+dir = sys.argv[4]+"reservas\\"
 
 dataFrames = {1:'',2:''}
 
 for item in currentPattern:
-    currentFile = item.split('/').pop()
-    if(str(currentFile) == 'reservas_sap_'+str(sys.argv[1])+'_'+sys.argv[5]+'.xlsx'):
-        dataFrames[1]= pd.read_excel(dir+currentFile)
-    elif(str(currentFile)== 'reservas_sigep_'+str(sys.argv[1])+'_'+sys.argv[5]+'.xlsx'):
-        dataFrames[2]= pd.read_excel(dir+currentFile)
+    currentFile = item.split('\\').pop()
+    if(str(currentFile).lower() == 'reservas_sap_'+str(sys.argv[1])+'_'+sys.argv[5]+'.xlsx'):
+        dataFrames[1] = pd.read_excel(dir+currentFile)
+    elif(str(currentFile).lower() == 'reservas_sigep_'+str(sys.argv[1])+'_'+sys.argv[5]+'.xlsx'):
+        dataFrames[2] = pd.read_excel(dir+currentFile)
 
-reservasSap = dataFrames[1]
+colRSa = dataFrames[1].columns.tolist()
+reservasSap = dataFrames[1].sort_values(by=[colRSa[0]])
 reservasSigep = dataFrames[2]
 
 #ReservasSigep
@@ -37,8 +32,7 @@ for sigep in reservasSigepItems:
     cols = values.columns.tolist()
     cols = [cols[9]] + [cols[7]] + cols[0:4] + [cols[10]] + cols[4:7] + [cols[8]]
     values = values[cols]
-    fecha = values[cols[5]].dt.strftime('%m/%d/%Y')
-    values.update(fecha)
+    #5
     values.loc[values.index.tolist(),'valida'] = 0
     reservasSigepItems[sigep] = values
 
@@ -50,13 +44,10 @@ string = reservasSigepItems[2][string]
 reservasSigepItems[2].loc[string.index.tolist(),cols[1]] = 0
 
 #reservasSap
-colRSa = reservasSap.columns.tolist()
 colS = reservasSigepItems[1].columns.tolist()
+totalOriRSap = reservasSap.loc[reservasSap.shape[0]-1,colRSa[5]]
 reservasSap = reservasSap[:-1]
-fecha = reservasSap[colRSa[3]].dt.strftime('%m/%d/%Y')
-reservasSap.update(fecha)
-fecha = reservasSap[colRSa[17]].dt.strftime('%m/%d/%Y')
-reservasSap.update(fecha)
+#3 12
 reservasSap.loc[reservasSap.index.tolist(),'valida'] = 0
 iteration = reservasSap.groupby([colRSa[0]]).mean().reset_index()
 reservasSapResumen = reservasSap[[colRSa[0]] + [colRSa[5]]]
@@ -92,18 +83,24 @@ for index, row in filasCorrectas.iterrows():
     reservasSap.loc[value.index.tolist(),'valida'] = 1
 
 ''' SE CREA EL ARCHIVO DE EXCEL'''
-writer = pd.ExcelWriter(sys.argv[4]+'files_out/Reservas_'+str(sys.argv[1])+'_'+sys.argv[5]+'.xlsx', engine='xlsxwriter')
+writer = pd.ExcelWriter(sys.argv[4]+'files_out/Reservas_'+str(sys.argv[1])+'_'+sys.argv[5]+'.xlsx', 
+                        engine='xlsxwriter', 
+                        options={'nan_inf_to_errors': True})
 ''' ESTILOS '''
 workbook = writer.book
-cell_size = 20
+cell_size = 10
 money = workbook.add_format({'num_format': '#,##0'})
 title = workbook.add_format({'fg_color': '#C6E0B4'})
 
 ''' RESERVAS '''
 sheetsReservas = {1:'Reservas_SAP',2:'Reservas_SIGEP'}
 #Reservas SAP
+reservasSapP = reservasSap.astype(object)
+reservasSap = reservasSapP.where(reservasSapP.notnull(), None)
+#reservasSapV = reservasSapV.dropna()
 reservasSapV = reservasSap.drop('valida', 1)
-reservasSapV.to_excel(writer, index=False, sheet_name=sheetsReservas[1])
+reservasSapP = pd.DataFrame(columns = reservasSapV.columns.values)
+reservasSapP.to_excel(writer, index=False, sheet_name=sheetsReservas[1])
 worksheet = writer.sheets[sheetsReservas[1]]
 worksheet.set_column('A:X', cell_size, None)
 worksheet.set_column('F:F', None, money)
@@ -119,39 +116,64 @@ reservasSigep.columns = titulosSigep[0:11] + [titulosSigep[14]]
 reservaSigepV = reservasSigep.drop('valida', 1)
 reservaSigepV.to_excel(writer, sheet_name=sheetsReservas[2], index=False)
 worksheet = writer.sheets[sheetsReservas[2]]
-worksheet.set_row(0, 30, title)
 worksheet.set_column('A:K', cell_size, None)
 worksheet.set_column('B:B', None, money)
 worksheet.autofilter('A1:K1')
+worksheet.set_row(0, None, title)
 
 correct_info = workbook.add_format({'fg_color': '#C6E0B4'})
 correct_info_money = workbook.add_format({'fg_color': '#C6E0B4', 'num_format': '#,##0'})
 wrong_info  = workbook.add_format({'fg_color': '#F8CBAD'})
 wrong_info_money  = workbook.add_format({'fg_color': '#F8CBAD', 'num_format': '#,##0'})
+correct_info_b = workbook.add_format({'fg_color': '#C6E0B4', 'bold': True})
+wrong_info_b  = workbook.add_format({'fg_color': '#F8CBAD', 'bold': True})
+moneyTotalSap = workbook.add_format({'num_format': '#,##', 'fg_color':'#ffff00'})
 
 ''' ESTILO DE RESERVAS SIGEP Y SAP'''
-dataFrames = {1:'',2:''}
-dataFrames[1] = reservasSap
-dataFrames[2] = reservasSigep
 totalReserva = {1:'',2:''}
-for item in dataFrames:
-    worksheet = writer.sheets[sheetsReservas[item]]
-    shapes = dataFrames[item].shape
-    shapes = shapes[0] + 1
-    totalReserva[item] = shapes
-    col = dataFrames[item].columns.tolist()
-    for index, row in dataFrames[item].iterrows():
-        index = index + 1
-        if (row['valida'] == 0):
-            worksheet.set_row(index,None, wrong_info)
-            styleReservas(item, row, col, worksheet, index, wrong_info_money)
-        else:
-            worksheet.set_row(index,None,correct_info)
-            styleReservas(item, row, col, worksheet, index, correct_info_money)
-    worksheet.set_row(0, 30, title)
 
-worksheet.write(totalReserva[1], 5, '=SUM(F2:F'+str(totalReserva[1])+')', money)
-worksheet.write(totalReserva[2], 1, '=SUM(B2:B'+str(totalReserva[2])+')', money)
+worksheet = writer.sheets[sheetsReservas[2]]
+shapes = reservasSigep.shape
+shapes = shapes[0] + 1
+col = reservasSigep.columns.tolist()
+for index, row in reservasSigep.iterrows():
+    index = index + 1
+    if (row['valida'] == 0):
+        worksheet.set_row(index, None, wrong_info)
+        worksheet.write(index, 1, row[col[1]], wrong_info_money)
+    else:
+        worksheet.set_row(index,None,correct_info)
+        worksheet.write(index, 1, row[col[1]], correct_info_money)
+
+worksheet.write(shapes, 1, '=SUM(B2:B'+str(shapes)+')', money)
+
+worksheet = writer.sheets[sheetsReservas[1]]
+col = reservasSap.columns.tolist()
+cont = 1
+for index, row in sumReservaSap.iterrows():
+    values =  reservasSap[col[0]] == row[col[0]]
+    values =  reservasSap[values]
+    for indexV, rowV in values.iterrows():
+        if (rowV['valida'] == 0):
+            worksheet.write_row(cont, 0, rowV, wrong_info)
+            worksheet.write(cont, 5, rowV[col[5]], wrong_info_money)
+            worksheet.set_row(cont, None, None, {'level': 1})
+        else:
+            worksheet.write_row(cont, 0, rowV, correct_info)
+            worksheet.write(cont, 5, rowV[col[5]], correct_info_money)
+            worksheet.set_row(cont, None, None, {'level': 1})
+        cont = cont + 1
+    if (rowV['valida'] == 0):
+        worksheet.set_row(cont, None, wrong_info)
+        worksheet.write(cont, 0, row[col[0]], wrong_info_b)
+        worksheet.write(cont, 5, row[col[5]], wrong_info_money)
+    else:
+        worksheet.set_row(cont, None, correct_info)
+        worksheet.write(cont, 0, row[col[0]], correct_info_b)
+        worksheet.write(cont, 5, row[col[5]], correct_info_money)
+    cont = cont + 1
+
+worksheet.write(cont, 5, totalOriRSap, moneyTotalSap)
 
 # Close the Pandas Excel writer and output the Excel file.
 writer.save()
