@@ -151,7 +151,8 @@ for item in currentPattern:
         dataFrames[3]= pd.read_excel(dir+currentFile)
 
 generalSigep = dataFrames[1]
-pagosSap = dataFrames[2]
+cols = dataFrames[2].columns.tolist()
+pagosSap = dataFrames[2].sort_values(by=[cols[0]])
 colRS = dataFrames[3].columns.tolist()
 recaudosSap = dataFrames[3].sort_values(by=[colRS[0]])
 
@@ -320,6 +321,28 @@ for item in salarioEps:
     suma = abs(pago['valida']).sum()
     egreso['valida'] = suma
     generalSigepItems[2].update(egreso)
+
+#QUI
+qui = pagosSap.apply(lambda s: str(s[cols[4]]).lower()[0:3] == 'qui', axis=1)
+qui = pagosSap[qui]
+
+quiSalario = qui.apply(lambda s: str(s[cols[20]]).lower() == 'salario', axis=1)
+quiSalario = qui[quiSalario]
+quiSalario = quiSalario[cols[0]]
+quiSalario = quiSalario.loc[0]
+quiEPagos = generalSigepItems[2][colE[0]] == quiSalario
+quiEPagos = generalSigepItems[2][quiEPagos]
+quiEPagosTotal = abs(quiEPagos[colE[1]]).sum()
+
+quiN = qui[[cols[0]] + [cols[1]] + ['SS']]
+quiPre = abs(quiN[cols[1]]).sum()
+quiSS = abs(quiN['SS']).sum()
+totalQui = quiPre + quiSS
+if(quiEPagosTotal == totalQui):
+    qui['valida'] = 0
+    quiEPagos['valida'] = 0
+    pagosSap.update(qui)
+    generalSigepItems[2].update(quiEPagos)
 
 #seguridad
 colP = pagosSap.columns.tolist()
@@ -546,6 +569,7 @@ wrong_info_date = workbook.add_format({'fg_color': '#F8CBAD', 'num_format': 'mm/
 deducciones_color = workbook.add_format({'fg_color': '#bdd7ee', 'num_format': '#,##0'})
 correct_normal_format = workbook.add_format({'fg_color': '#C6E0B4', 'num_format': '###'})
 wrong_normal_format = workbook.add_format({'fg_color': '#F8CBAD', 'num_format': '###'})
+
 ''' ESTILO DE RECAUDOS - INGRESOS- PAGOS - EGRESOS '''
 dataFrames = {1:'',2:'',3:'',4:''}
 dataFrames[1] = recaudos
@@ -626,7 +650,6 @@ if(enablePos == True):
             anterior = row[col[0]]
         cont = cont + 1
         
-
 ''' TOTALES EN CONCILIACION'''
 worksheet = writer.sheets['Conciliación']
 #Ingresos
