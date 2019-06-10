@@ -207,7 +207,7 @@ recaudosSap['Diferencia'] = 0
 recaudosSap['Observaciones'] = 0
 recaudosSap['valida'] = 0
 
-'''Sigue aqui'''
+
 #pagosSap
 cols = pagosSap.columns.tolist()
 nanValues = pagosSap.apply(lambda s: str(s[cols[0]]).lower() == 'nan', axis=1)
@@ -226,6 +226,7 @@ valorFormulaDiferencia(recaudosSap, generalSigepItems[1])
 valorFormulaDiferencia(generalSigepItems[2], pagosSap)
 valorFormulaDiferencia(pagosSap, generalSigepItems[2])
 
+'''Sigue aqui'''
 ccPosgrados = dict()
 ccPosgradosPagos = dict()
 #Calculos CC 21930003 POSGRADOS
@@ -300,6 +301,7 @@ bancolombiaE = generalSigepItems[2].apply(lambda s: 'gastos bancarios' in str(s[
 bancolombiaE = generalSigepItems[2][bancolombiaE]
 uneBancolombia(pagosSap, generalSigepItems[2], colP, colE, bancolombiaP, bancolombiaE)
 
+'''Sigue aqui'''
 #Calculo seguridad
 cols = pagosSap.columns.tolist()
 salario = pagosSap.apply(lambda s: str(s[cols[20]]).lower() == 'salario', axis=1)
