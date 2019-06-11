@@ -333,6 +333,7 @@ quiSalario = qui.apply(lambda s: str(s[cols[20]]).lower() == 'salario', axis=1)
 quiSalario = qui[quiSalario]
 quiSalario = quiSalario[cols[0]]
 quiSalario = quiSalario.loc[0]
+
 quiEPagos = generalSigepItems[2][colE[0]] == quiSalario
 quiEPagos = generalSigepItems[2][quiEPagos]
 quiEPagosTotal = abs(quiEPagos[colE[1]]).sum()

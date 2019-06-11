@@ -32,7 +32,6 @@ class GeneralSigep():
             general_sigep_items[sigep] = iqual_general_items
         return general_sigep_items[1], general_sigep_items[2]
 
-
 class ElementosConciliacion(GeneralSigep):
     def __init__(self, files, centro_costo):
         GeneralSigep.__init__(self, files[1])
@@ -128,6 +127,44 @@ class AlgoritmoDiferenciaColumnas():
             file_one.loc[index,'valida'] = suma - item_doc
         return file_one
 
+class AlgoritmoDiferenciaSeguridadSocial():
+    def __init__(self, col_pagos_sap, col_egresos_sigep):
+        self.col_pagos_sap = col_pagos_sap        
+        self.col_egresos_sigep = col_egresos_sigep
+
+    def get_calculo_diferencia_seguridad_social(self, pagos_sap, salario):
+        calculo_pagos_sap = pagos_sap
+        calculo_salario = salario
+        for index0, row0 in salario.iterrows():
+            suma_salario = 0
+            seguridad_social = 0
+            item_pagos = pagos_sap[self.col_pagos_sap[0]] == row0[self.col_pagos_sap[0]]
+            item_pagos = pagos_sap[item_pagos]
+            suma_pagos = item_pagos[self.col_pagos_sap[1]].sum()
+            for index1, row1 in salario.iterrows():
+                if(row0[self.col_pagos_sap[0]] == row1[self.col_pagos_sap[0]]):
+                    suma_salario = suma_salario + abs(row1[self.col_pagos_sap[1]])
+            seguridad_social = int(round(suma_salario * 0.24023))
+            valida = abs(row0['Formula']) - (suma_pagos + seguridad_social)
+            item_pagos.loc[:,'valida'] = valida
+            calculo_pagos_sap.update(item_pagos)
+            calculo_salario.loc[index0, 'SS'] = seguridad_social
+            calculo_salario.loc[index0, 'valida'] = valida            
+            calculo_pagos_sap.update(calculo_salario)
+        return calculo_pagos_sap
+
+    def get_validacion_diferencia_seguridad_social(self, salario, pagos_sap, egresos_sigep):
+        validacion_egresos_sigep = egresos_sigep
+        for item in salario:
+            pago = pagos_sap[self.col_pagos_sap[0]] == item
+            pago = pagos_sap[pago]
+            egreso = validacion_egresos_sigep[self.col_egresos_sigep[0]] == item
+            egreso = validacion_egresos_sigep[egreso]
+            suma = abs(pago['valida']).sum()
+            egreso.loc[:, 'valida'] = suma
+            validacion_egresos_sigep.update(egreso)
+        return validacion_egresos_sigep
+
 class PagosEgresosEspecificaciones():
     def __init__(self, col_pagos_sap, col_egresos_sigep):
         self.col_pagos_sap = col_pagos_sap
@@ -162,6 +199,19 @@ class PagosEgresosEspecificaciones():
         pagos_sap.update(bancolombia_pago)
         egresos_sigep.update(bancolombia_egreso)
 
+    def get_salario(self, pagos_sap):
+        salario_key_word = 'salario'
+        salario = pagos_sap.apply(lambda s: str(s[self.col_pagos_sap[20]]).lower() == salario_key_word, axis=1)
+        salario = pagos_sap[salario]
+        return salario
+
+    def get_resume_salario(self, salario):
+        resume_salario = salario[[self.col_pagos_sap[0]] + [self.col_pagos_sap[1]]]
+        resume_salario = resume_salario.groupby([self.col_pagos_sap[0]]).sum()
+        resume_salario = resume_salario.reset_index()
+        resume_salario = dict.fromkeys(resume_salario[self.col_pagos_sap[0]], [])
+        return resume_salario
+
 if __name__ == "__main__":
     currentPattern = [sys.argv[2], sys.argv[3], sys.argv[4]]
     path = sys.argv[5]+"conciliacion\\"
@@ -194,3 +244,13 @@ if __name__ == "__main__":
     pagos_egresos_especificaciones = PagosEgresosEspecificaciones(col_pagos_sap, col_egresos_sigep)
     pagos_egresos_especificaciones.get_une_epm(pagos_sap, egresos_sigep)
     pagos_egresos_especificaciones.get_bancolombia(pagos_sap, egresos_sigep)
+    salario = pagos_egresos_especificaciones.get_salario(pagos_sap)
+    resumen_salario = pagos_egresos_especificaciones.get_resume_salario(salario)
+    
+    algoritmo_diferencia_seguridad_social = AlgoritmoDiferenciaSeguridadSocial(col_pagos_sap, col_egresos_sigep)
+    #writer = pd.ExcelWriter('test.xlsx', engine='xlsxwriter')
+    #pagos_sap.to_excel(writer, index=False, sheet_name='pago1')
+    pagos_sap = algoritmo_diferencia_seguridad_social.get_calculo_diferencia_seguridad_social(pagos_sap, salario)
+    #pagos_sap.to_excel(writer, index=False, sheet_name='pago2')
+    #writer.save()
+    egresos_sigep = algoritmo_diferencia_seguridad_social.get_validacion_diferencia_seguridad_social(resumen_salario, pagos_sap, egresos_sigep)
