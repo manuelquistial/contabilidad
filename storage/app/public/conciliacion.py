@@ -11,6 +11,7 @@ class GeneralSigep():
         self.sigep = sigep
 
     def get_general_sigep(self):
+        titulos_sigep = ['Número de Soporte','Valor','Proyecto','Codigo','Tipo','Fecha','Periodo','Referencia','Nit/Cédula','Observación','Tipo de Soporte',' Formula','Diferencia','Observaciones','valida']
         general_sigep = self.sigep
         general_sigep_items = {1:'', 2:''}
         title_files =  {1:'Ingreso', 2:'Egreso'}
@@ -30,6 +31,8 @@ class GeneralSigep():
             iqual_general_items.loc[:,'Observaciones'] = 0
             iqual_general_items.loc[:,'valida'] = 0
             general_sigep_items[sigep] = iqual_general_items
+        general_sigep_items[1].columns = titulos_sigep
+        general_sigep_items[2].columns = titulos_sigep
         return general_sigep_items[1], general_sigep_items[2]
 
 class ElementosConciliacion(GeneralSigep):
@@ -212,6 +215,41 @@ class PagosEgresosEspecificaciones():
         resume_salario = dict.fromkeys(resume_salario[self.col_pagos_sap[0]], [])
         return resume_salario
 
+    def get_qui_pagos(self, pagos_sap):
+        qui_key_word = 'qui'
+        qui_pagos = pagos_sap.apply(lambda s: str(s[self.col_pagos_sap[4]]).lower()[0:3] == qui_key_word, axis=1)
+        qui_pagos = pagos_sap[qui_pagos]
+        return qui_pagos
+
+    def get_qui_salario_pagos(self, qui_pagos):
+        qui_salario_key_word = 'salario'
+        qui_salario_pagos = qui_pagos.apply(lambda s: str(s[self.col_pagos_sap[20]]).lower() == qui_salario_key_word, axis=1)
+        qui_salario_pagos = qui_pagos[qui_salario_pagos]
+        qui_salario_pagos = qui_salario_pagos[self.col_pagos_sap[0]]
+        qui_salario_pagos = qui_salario_pagos.loc[0]
+        return qui_salario_pagos
+
+    def get_qui_egresos(self, qui_salario_pagos, egresos_sigep):
+        qui_egresos = egresos_sigep[self.col_egresos_sigep[0]] == qui_salario_pagos
+        qui_egresos = egresos_sigep[qui_egresos]
+        return qui_egresos
+
+    def get_qui_pagos_egresos(self, pagos_sap, egresos_sigep):
+        qui_pagos = self.get_qui_pagos(pagos_sap)
+        qui_salario_pagos = self.get_qui_salario_pagos(qui_pagos)
+        qui_egresos = self.get_qui_egresos(qui_salario_pagos, egresos_sigep)
+        qui_pagos_egresos_total = abs(qui_egresos[self.col_egresos_sigep[1]]).sum()
+        qui_pagos_resumen = qui_pagos[[self.col_pagos_sap[0]] + [self.col_pagos_sap[1]] + ['SS']]
+        qui_pagos_total = abs(qui_pagos_resumen[self.col_pagos_sap[1]]).sum()
+        qui_pagos_total_ss = abs(qui_pagos_resumen['SS']).sum()
+        qui_total = qui_pagos_total + qui_pagos_total_ss
+        if(qui_total == qui_pagos_egresos_total):
+            qui_pagos['valida'] = 0
+            qui_egresos['valida'] = 0
+            pagos_sap.update(qui_pagos)
+            egresos_sigep.update(qui_egresos)
+
+
 if __name__ == "__main__":
     currentPattern = [sys.argv[2], sys.argv[3], sys.argv[4]]
     path = sys.argv[5]+"conciliacion\\"
@@ -254,3 +292,4 @@ if __name__ == "__main__":
     #pagos_sap.to_excel(writer, index=False, sheet_name='pago2')
     #writer.save()
     egresos_sigep = algoritmo_diferencia_seguridad_social.get_validacion_diferencia_seguridad_social(resumen_salario, pagos_sap, egresos_sigep)
+    pagos_egresos_especificaciones.get_qui_pagos_egresos(pagos_sap, egresos_sigep)
