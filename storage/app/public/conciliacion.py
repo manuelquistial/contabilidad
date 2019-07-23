@@ -249,11 +249,111 @@ class PagosEgresosEspecificaciones():
             pagos_sap.update(qui_pagos)
             egresos_sigep.update(qui_egresos)
 
+class DisenoDocumentoExcel():
+
+    def __init__(self, writer, recaudos, ingresos, pagos, egresos, hojas_excel):
+        self.recaudos = recaudos
+        self.shape_recaudos = recaudos.shape
+        self.col_recaudos = recaudos.columns.tolist()
+        self.recaudo_positivo = writer.book.add_format({'fg_color':'#FFE699'})
+        self.ingresos = ingresos
+        self.pagos = pagos
+        self.egresos = egresos
+        self.hojas_excel = hojas_excel
+        self.cell_size = 12.5
+        self.correct_info = writer.book.add_format({'fg_color': '#C6E0B4'})
+        self.wrong_info = writer.book.add_format({'fg_color': '#F8CBAD'})
+        self.correct_normal_format = writer.book.add_format({'fg_color': '#C6E0B4', 'num_format': '###'})
+        self.wrong_normal_format = writer.book.add_format({'fg_color': '#F8CBAD', 'num_format': '###'})
+        self.date = writer.book.add_format({'num_format': 'mm/dd/yyyy'})
+        self.correct_info_money = writer.book.add_format({'fg_color': '#C6E0B4', 'num_format': '#,##0'})
+        self.wrong_info_money = writer.book.add_format({'fg_color': '#F8CBAD', 'num_format': '#,##0'})
+        
+
+    def set_hojas_excel(self, writer, hoja, nombre_hoja):
+        sin_valida = hoja.drop('valida', 1)
+        nombre_columns = sin_valida.columns.tolist()
+        only_columns = pd.DataFrame(columns = nombre_columns)
+        only_columns.to_excel(writer, index=False, sheet_name=nombre_hoja)
+
+    def set_formato_hojas(self, writer, sheet):
+        for item in sheet:
+            if(item % 2) != 0:
+                worksheet = writer.sheets[sheet[item]]
+                '''if(item == 1):
+                    if(enablePos == True):
+                        worksheet.set_column('A:'+xlsxwriter.utility.xl_col_to_name(recaudos.shape[1]+2), cell_size, None)
+                        worksheet.autofilter('A1:'+xlsxwriter.utility.xl_col_to_name(recaudos.shape[1]+2)+'1')
+                    else:
+                        worksheet.set_column('A:'+xlsxwriter.utility.xl_col_to_name(recaudos.shape[1]-1), cell_size, None)
+                        worksheet.autofilter('A1:'+xlsxwriter.utility.xl_col_to_name(recaudos.shape[1]-1)+'1')
+                else:
+                    worksheet.set_column('A:'+xlsxwriter.utility.xl_col_to_name(pagos.shape[1]-2), cell_size, None)
+                    worksheet.autofilter('A1:'+xlsxwriter.utility.xl_col_to_name(pagos.shape[1]-2)+'1')'''
+                worksheet.set_column('C:D', None, None, {'hidden': True})
+                worksheet.set_column('H:I', None, None, {'hidden': True})
+                worksheet.set_column('K:T', None, None, {'hidden': True})
+                worksheet.set_column('W:W', None, None, {'hidden': True})
+                if(xlsxwriter.utility.xl_col_to_name(self.pagos.shape[1]-5) != 'Y'):
+                    worksheet.set_column('Y:'+xlsxwriter.utility.xl_col_to_name(self.pagos.shape[1]-6), None, None, {'hidden': True})
+            elif(item % 2) == 0:
+                worksheet = writer.sheets[sheet[item]]
+                worksheet.set_column('A:N', self.cell_size, None)
+                worksheet.autofilter('A1:N1')
+
+    def set_estilos_recaudos(self, worksheet, row, cont, format):
+        col = self.col_recaudos
+        if(row[col[1]]) > 0:
+            worksheet.set_row(cont, None, self.recaudo_positivo)
+            worksheet.write(cont, 1,  row[col[1]], self.recaudo_positivo.set_num_format('#,##0'))
+            worksheet.write(cont, len(col)-4, '=SUMAR.SI.CONJUNTO(Ingresos_SIGEP!B:B,Ingresos_SIGEP!A:A,Recaudos_SAP!A'+str(cont+1)+',Ingresos_SIGEP!G:G,Recaudos_SAP!G:G)', self.recaudo_positivo.set_num_format('#,##0'))
+            worksheet.write(cont, len(col)-3, '=ABS(B'+str(cont+1)+')-'+xlsxwriter.utility.xl_col_to_name(len(col)-4)+str(cont+1), self.recaudo_positivo.set_num_format('#,##0'))
+            worksheet.write(cont, 4, int(row[col[4]]), format.add_format({'num_format': '###'}))
+            worksheet.write(cont, 5, row[col[5]], self.recaudo_positivo.set_num_format('mm/dd/yyyy'))
+            worksheet.write(cont, 17, row[col[17]], self.recaudo_positivo.set_num_format('mm/dd/yyyy'))
+        else:
+            #negRecaudos.append('B'+str(cont+1))
+            worksheet.write(cont, 1,  row[col[1]], format.set_num_format('#,##0'))
+            worksheet.write(cont, len(col)-4, '=SUMAR.SI.CONJUNTO(Ingresos_SIGEP!B:B,Ingresos_SIGEP!A:A,Recaudos_SAP!A'+str(cont+1)+',Ingresos_SIGEP!G:G,Recaudos_SAP!G:G)', format.set_num_format('#,##0'))
+            worksheet.write(cont, len(col)-3, '=ABS(B'+str(cont+1)+')-'+xlsxwriter.utility.xl_col_to_name(len(col)-4)+str(cont+1), format.set_num_format('#,##0'))
+            worksheet.write(cont, 4, int(row[col[4]]), format.set_num_format('###'))
+            worksheet.write(cont, 5, row[col[5]], format.set_num_format('mm/dd/yyyy'))
+            worksheet.write(cont, 17, row[col[17]], format.set_num_format('mm/dd/yyyy'))
+        
+        '''if(enPos == True):
+            if(str(row[col[0]]).lower()[0:4] == '4200'):
+                valueP = 0
+                if(row[col[0]] in posgrados):
+                    valueP = posgrados[row[col[0]]]
+                    valueP = valueP + ['B'+str(cont+1)]
+                    posgrados[row[col[0]]] = valueP
+                    if(row[col[1]]) > 0:
+                        worksheet.write(cont, len(col)-3, '', recaudo_positivo.set_num_format('#,##0'))
+                    else:
+                        worksheet.write(cont, len(col)-3, '', format)'''
+
+    def set_datos_estilos_recaudos(self, writer, nombre_hoja):
+        posNegRecaudos = []
+        worksheet = writer.sheets[nombre_hoja]
+        shape = self.shape_recaudos[0] + 2
+        cont = 1
+        for index, row in self.recaudos.iterrows():
+            if (row['valida'] == 0) | (row['Diferencia'] == 0):
+                worksheet.set_row(cont, None, self.correct_info)
+                self.set_estilos_recaudos(worksheet, row, cont, self.correct_info)
+            else:
+                worksheet.set_row(cont, None, self.wrong_info)
+                self.set_estilos_recaudos(worksheet, row, cont, self.wrong_info)
+            cont = cont + 1
+        '''if(self.recaudos.empty):
+            shape = 3
+        totalesSheets(worksheet, shape-1, money, item, totaDetSap, posNegRecaudos, col, enablePos)
+        worksheet.set_row(0, 30, title)'''
 
 if __name__ == "__main__":
     currentPattern = [sys.argv[2], sys.argv[3], sys.argv[4]]
-    path = sys.argv[5]+"conciliacion\\"
-    conciliacion_files = {1:'',2:'',3:''}
+    path = sys.argv[5] + "conciliacion\\"
+    conciliacion_files = {1:'', 2:'', 3:''}
     for pattern in currentPattern:
         current_file = pattern.split('\\').pop()
         file_path = path + current_file
@@ -293,3 +393,19 @@ if __name__ == "__main__":
     #writer.save()
     egresos_sigep = algoritmo_diferencia_seguridad_social.get_validacion_diferencia_seguridad_social(resumen_salario, pagos_sap, egresos_sigep)
     pagos_egresos_especificaciones.get_qui_pagos_egresos(pagos_sap, egresos_sigep)
+
+    #Documento de Excel
+    writer = pd.ExcelWriter(sys.argv[5] + 'files_out/Centro_de_Costos_' + str(sys.argv[1]) + '_' + sys.argv[6] + '.xlsx', engine='xlsxwriter')
+    hojas_excel = {1:'Recaudos_SAP',2:'Ingresos_SIGEP',3:'Pagos_SAP',4:'Egresos_SIGEP'}
+    
+    diseno_documento_excel = DisenoDocumentoExcel(writer, recaudos_sap, ingresos_sigep, pagos_sap, egresos_sigep, hojas_excel)
+    diseno_documento_excel.set_hojas_excel(writer, recaudos_sap, hojas_excel[1])
+    diseno_documento_excel.set_hojas_excel(writer, ingresos_sigep, hojas_excel[2])
+    diseno_documento_excel.set_hojas_excel(writer, pagos_sap, hojas_excel[3])
+    diseno_documento_excel.set_hojas_excel(writer, egresos_sigep, hojas_excel[4])
+
+    diseno_documento_excel.set_formato_hojas(writer, hojas_excel)
+    diseno_documento_excel.set_datos_estilos_recaudos(writer, hojas_excel[1])
+    #writer = pd.ExcelWriter('test.xlsx', engine='xlsxwriter')
+    #pagos_sap.to_excel(writer, index=False, sheet_name='pago1')
+    writer.save()
