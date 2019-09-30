@@ -32,7 +32,6 @@ for sigep in reservasSigepItems:
     cols = values.columns.tolist()
     cols = [cols[9]] + [cols[7]] + cols[0:4] + [cols[10]] + cols[4:7] + [cols[8]]
     values = values[cols]
-    #5
     values.loc[values.index.tolist(),'valida'] = 0
     reservasSigepItems[sigep] = values
 
@@ -45,18 +44,18 @@ reservasSigepItems[2].loc[string.index.tolist(),cols[1]] = 0
 
 #reservasSap
 colS = reservasSigepItems[1].columns.tolist()
-totalOriRSap = reservasSap.loc[reservasSap.shape[0]-1,colRSa[5]]
+rowsReservasSap = reservasSap.shape[0]
+totalOriRSap = reservasSap.loc[rowsReservasSap-1,colRSa[5]]
 reservasSap = reservasSap[:-1]
-#3 12
+
 reservasSap.loc[reservasSap.index.tolist(),'valida'] = 0
-iteration = reservasSap.groupby([colRSa[0]]).mean().reset_index()
 reservasSapResumen = reservasSap[[colRSa[0]] + [colRSa[5]]]
 
 sumReservaSap = reservasSapResumen.groupby([colRSa[0]]).sum()
 sumReservaSap = sumReservaSap.reset_index()
 ceroSumReservaSap = sumReservaSap.loc[sumReservaSap[colRSa[5]] == 0]
 
-egreso = reservasSigepItems[2][[colS[0]]+ [colS[1]]]
+egreso = reservasSigepItems[2][[colS[0]] + [colS[1]]]
 egresoResumen = egreso.groupby([colS[0]]).sum()
 egresoResumen = egresoResumen.reset_index()
 
@@ -78,6 +77,7 @@ for index, row in ceroSumReservaSap.iterrows():
 
 for index, row in filasCorrectas.iterrows():
     egreso = reservasSigepItems[2].loc[reservasSigepItems[2][colS[0]] == row[colRSa[0]]]
+    print(egreso)
     value = reservasSap.loc[reservasSap[colRSa[0]] == row[colRSa[0]]]
     reservasSigepItems[2].loc[egreso.index.tolist(),'valida'] = 1
     reservasSap.loc[value.index.tolist(),'valida'] = 1
@@ -128,6 +128,8 @@ wrong_info_money  = workbook.add_format({'fg_color': '#F8CBAD', 'num_format': '#
 correct_info_b = workbook.add_format({'fg_color': '#C6E0B4', 'bold': True})
 wrong_info_b  = workbook.add_format({'fg_color': '#F8CBAD', 'bold': True})
 moneyTotalSap = workbook.add_format({'num_format': '#,##', 'fg_color':'#ffff00'})
+correct_info_date = workbook.add_format({'fg_color': '#C6E0B4', 'num_format': 'mm/dd/yyyy'})
+wrong_info_date = workbook.add_format({'fg_color': '#F8CBAD', 'num_format': 'mm/dd/yyyy'})
 
 ''' ESTILO DE RESERVAS SIGEP Y SAP'''
 totalReserva = {1:'',2:''}
@@ -141,39 +143,42 @@ for index, row in reservasSigep.iterrows():
     if (row['valida'] == 0):
         worksheet.set_row(index, None, wrong_info)
         worksheet.write(index, 1, row[col[1]], wrong_info_money)
+        worksheet.write(index, 5, row[col[5]], wrong_info_date)
     else:
         worksheet.set_row(index,None,correct_info)
         worksheet.write(index, 1, row[col[1]], correct_info_money)
+        worksheet.write(index, 5, row[col[5]], correct_info_date)
 
 worksheet.write(shapes, 1, '=SUM(B2:B'+str(shapes)+')', money)
 
 worksheet = writer.sheets[sheetsReservas[1]]
 col = reservasSap.columns.tolist()
 cont = 1
-for index, row in sumReservaSap.iterrows():
-    values =  reservasSap[col[0]] == row[col[0]]
-    values =  reservasSap[values]
-    for indexV, rowV in values.iterrows():
-        if (rowV['valida'] == 0):
-            worksheet.write_row(cont, 0, rowV, wrong_info)
-            worksheet.write(cont, 5, rowV[col[5]], wrong_info_money)
-            worksheet.set_row(cont, None, None, {'level': 1})
-        else:
-            worksheet.write_row(cont, 0, rowV, correct_info)
-            worksheet.write(cont, 5, rowV[col[5]], correct_info_money)
-            worksheet.set_row(cont, None, None, {'level': 1})
-        cont = cont + 1
+#for index, row in sumReservaSap.iterrows():
+#    values =  reservasSap[col[0]] == row[col[0]]
+#    values =  reservasSap[values]
+for indexV, rowV in reservasSap.iterrows():
     if (rowV['valida'] == 0):
+        worksheet.write_row(cont, 0, rowV, wrong_info)
+        worksheet.write(cont, 5, rowV[col[5]], wrong_info_money)
+        #worksheet.set_row(cont, None, None, {'level': 1})
+    else:
+        worksheet.write_row(cont, 0, rowV, correct_info)
+        worksheet.write(cont, 5, rowV[col[5]], correct_info_money)
+            #worksheet.set_row(cont, None, None, {'level': 1})
+        #cont = cont + 1
+    '''if (rowV['valida'] == 0):
         worksheet.set_row(cont, None, wrong_info)
-        worksheet.write(cont, 0, row[col[0]], wrong_info_b)
+        #worksheet.write(cont, 0, row[col[0]], wrong_info_b)
         worksheet.write(cont, 5, row[col[5]], wrong_info_money)
     else:
         worksheet.set_row(cont, None, correct_info)
-        worksheet.write(cont, 0, row[col[0]], correct_info_b)
-        worksheet.write(cont, 5, row[col[5]], correct_info_money)
+        #worksheet.write(cont, 0, row[col[0]], correct_info_b)
+        worksheet.write(cont, 5, row[col[5]], correct_info_money)'''
     cont = cont + 1
 
 worksheet.write(cont, 5, totalOriRSap, moneyTotalSap)
+worksheet.write(cont+1, 5, '=SUM(F2:F'+str(rowsReservasSap)+')', money)
 
 # Close the Pandas Excel writer and output the Excel file.
 writer.save()
