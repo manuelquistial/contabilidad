@@ -50,6 +50,11 @@
                                         <a class="nav-link" href="{{ route('list_users') }}">{{ __('Lista Usuarios') }}</a>
                                     @show
                                 </li>
+                                <li class="nav-item">
+                                    @section('porcentajes')
+                                        <a class="nav-link" href="{{ route('list_porcentajes') }}">{{ __('Porcentajes') }}</a>
+                                    @show
+                                </li>
                             @endif 
                             <li class="nav-item dropdown">
                                 <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>

@@ -64,26 +64,29 @@ function dataUpload(url, classes){
         }, false);
         ajax.addEventListener("load", function(event){
             _("downloads").innerHTML = "";
-            try{
+            let error = JSON.parse(event.target.responseText).error;
+            let empty = JSON.parse(event.target.responseText).empty;
+            if((error == undefined) & (empty == undefined)){
                 JSON.parse(event.target.responseText).forEach(function (file) {
                     _("downloads").innerHTML += '<div class="card"><div class="card-body"><h5 class="card-title">'+file.split('/').pop()+'</h5><a href="'+window.location.href+'/download?name='+file.split('/').pop()+'" role="button" class="btn btn-outline-danger">Descargar</a></div></div>'
                 });
                 _("upload-boxes-file").innerHTML = '';
                 classes.classList.remove('disabled');
-            }catch(e){
+            }else if(empty != undefined){
                 classes.classList.remove('disabled');
                 _("downloads").style.display = "inline-flex";
                 _("downloads").innerHTML = '<p id="downloads_text"></p>';
-                if(JSON.parse(event.target.responseText).error == undefined){
-                    _("downloads_text").innerHTML += JSON.parse(event.target.responseText).empty;
-                    _("downloads_text").innerHTML += ", documentos encontrados:"
-                    var value = JSON.parse(JSON.parse(event.target.responseText).files);
-                    value.forEach(function (file) {
-                        _("downloads_text").innerHTML += '<br>'+file.split('/').pop();
-                    });
-                }else{
-                    _("downloads_text").innerHTML = JSON.parse(event.target.responseText).error;
-                }
+                _("downloads_text").innerHTML += JSON.parse(event.target.responseText).empty;
+                _("downloads_text").innerHTML += ", documentos encontrados:"
+                var value = JSON.parse(JSON.parse(event.target.responseText).files);
+                value.forEach(function (file) {
+                    _("downloads_text").innerHTML += '<br>'+file.split('/').pop();
+                });
+            }else if(error != undefined){
+                classes.classList.remove('disabled');
+                _("downloads").style.display = "inline-flex";
+                _("downloads").innerHTML = '<p id="downloads_text"></p>';
+                _("downloads_text").innerHTML = error
             }
         }, false);
         ajax.open("GET", window.location.href+"/"+url+"?"+param, true);

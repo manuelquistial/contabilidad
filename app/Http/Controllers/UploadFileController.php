@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 use Auth;
-use Illuminate\Http\Request;
 use File;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 
@@ -37,15 +38,14 @@ class UploadFileController extends Controller
       if(empty($files) || (count($files) != 2)){
         return response()->json(['empty'=>'No existen los documentos necesarios para realizar reservas', 'files'=>json_encode($files)]);
       }else{
-        $param = new Process("python3 ".storage_path('app/public')."/reservas.py ".$value." ".$files[0]." ".$files[1]." ".storage_path('app/public/files/')." ".$userId);
-        $param->run();
-        if (!$param->isSuccessful()) {
-          throw new ProcessFailedException($param);
-          return response()->json(['error'=>'Error en la ejecucion del programa de reservas.']);
-        }else{
+        $process = new Process("python3 ".storage_path('app/public')."/reservas.py ".$value." ".$files[0]." ".$files[1]." ".storage_path('app/public/files/')." ".$userId);
+        try {
+          $process->mustRun();
           FILE::delete($files);
           $data = glob(storage_path('app/public/files/').'files_out/*'.$value."_".$userId.'.xlsx');
           return json_encode($data);
+        } catch (ProcessFailedException $exception) {
+          return response()->json(['error'=>$exception->getMessage()]);
         }
       }
     }
@@ -61,20 +61,22 @@ class UploadFileController extends Controller
             'num' => 'required',
         ]);
         $userId = Auth::id();
+        $porcentajes = DB::table('porcentajes')->get();
+        $salud = $porcentajes[0]->porcentaje_salud;
+        $ingresos = $porcentajes[0]->porcentaje_ingresos;
         $value = request()->num;
         $files = glob(storage_path('app/public/files/conciliacion')."/*".$value."_".$userId.".{xlsx,XLSX}", GLOB_BRACE);
         if(empty($files) || (count($files) != 3)){
           return response()->json(['empty'=>'No existen los documentos necesarios para conciliar', 'files'=>json_encode($files)]);
         }else{
-          $param = new Process("python3 ".storage_path('app/public')."/conciliacion.py ".$value." ".$files[0]." ".$files[1]." ".$files[2]." ".storage_path('app/public/files/')." ".$userId);
-          $param->run();
-          if (!$param->isSuccessful()) {
-            throw new ProcessFailedException($param);
-            return response()->json(['error'=>'Error en la ejecucion del programa de conciliacion.']);
-          }else{
+          $process = new Process("python3 ".storage_path('app/public')."/conciliacion.py ".$value." ".$files[0]." ".$files[1]." ".$files[2]." ".storage_path('app/public/files/')." ".$userId." ".$salud." ".$ingresos);
+          try {
+            $process->mustRun();
             FILE::delete($files);
             $data = glob(storage_path('app/public/files/').'files_out/*'.$value."_".$userId.'.xlsx');
             return json_encode($data);
+          } catch (ProcessFailedException $exception) {
+            return response()->json(['error'=>$exception->getMessage()]);
           }
         }
     }
